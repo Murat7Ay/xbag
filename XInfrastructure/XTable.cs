@@ -32,7 +32,6 @@ public class XTable
         {
             xBag.Put(_columnKeys[i], _rows[rowIndex][i]);
         }
-
         return xBag;
     }
 
@@ -49,13 +48,7 @@ public class XTable
     {
         if (!Utility.IsValidJsonPropertyName(columnKey))
             throw new JsonException($"{columnKey} invalid key");
-
         var columnIndex = ArrangeColumnIndex(rowIndex, columnKey, value);
-
-        
-
-
-        // Set the value in the specified cell
         _rows[rowIndex][columnIndex] = value;
     }
 
@@ -86,18 +79,14 @@ public class XTable
         int columnIndex = _columnKeys.IndexOf(columnKey);
         if (columnIndex == -1)
         {
-            // Column does not exist, add it
             _columnKeys.Add(columnKey);
             columnIndex = _columnKeys.Count - 1;
-
-            // Add empty rows for the new column
             for (int i = 0; i < _rows.Count; i++)
             {
                 _rows[i].Add(XValue.Create(xData.XType, null));
             }
         }
 
-        // Ensure that there are enough rows in the table
         while (rowIndex >= _rows.Count)
         {
             List<IXData> row = new List<IXData>();
@@ -105,10 +94,8 @@ public class XTable
             {
                 row.Add(XValue.Create(_columnTypeMap[_columnKeys[i]], null));
             }
-
             _rows.Add(row);
         }
-
         return columnIndex;
     }
 }
