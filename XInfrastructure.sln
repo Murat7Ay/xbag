@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XInfrastructure", "XInfrastructure\XInfrastructure.csproj", "{9FB79A3F-3227-4396-8182-DB177F8E56C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XBag-Test", "XBag-Test\XBag-Test.csproj", "{81B7ABDA-3367-48E2-BDD3-28C32521C212}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FB79A3F-3227-4396-8182-DB177F8E56C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FB79A3F-3227-4396-8182-DB177F8E56C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FB79A3F-3227-4396-8182-DB177F8E56C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FB79A3F-3227-4396-8182-DB177F8E56C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81B7ABDA-3367-48E2-BDD3-28C32521C212}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81B7ABDA-3367-48E2-BDD3-28C32521C212}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81B7ABDA-3367-48E2-BDD3-28C32521C212}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81B7ABDA-3367-48E2-BDD3-28C32521C212}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

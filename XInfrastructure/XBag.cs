@@ -1,0 +1,33 @@
+﻿using System.Collections.ObjectModel;
+using System.Text.Json;
+
+namespace XInfrastructure;
+
+using System.Collections.Generic;
+
+public class XBag
+{
+    private readonly Dictionary<string, IXData> _data = new();
+
+    public void Put(string key, IXData value)
+    {
+        if (!Utility.IsValidJsonPropertyName(key))
+            throw new JsonException($"{key} invalid key");
+        _data[key] = value;
+    }
+
+    public IXData? Get(string key)
+    {
+        return _data.TryGetValue(key, out var value) ? value : null;
+    }
+
+    public ReadOnlyDictionary<string, IXData> GetReadOnlyDictionary()
+    {
+        return _data.AsReadOnly();
+    }
+
+    public bool Remove(string key)
+    {
+        return _data.Remove(key);
+    }
+}
