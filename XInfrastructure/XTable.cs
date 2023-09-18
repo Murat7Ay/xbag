@@ -6,7 +6,7 @@ namespace XInfrastructure;
 public class XTable
 {
     private readonly List<string> _columnKeys;
-    private readonly List<List<IXData>> _rows;
+    private readonly List<List<XValue>> _rows;
     private readonly Dictionary<string, XType> _columnTypeMap;
 
     public int RowCount => _rows.Count;
@@ -20,7 +20,7 @@ public class XTable
     public XTable()
     {
         _columnKeys = new List<string>();
-        _rows = new List<List<IXData>>();
+        _rows = new List<List<XValue>>();
         _columnTypeMap = new Dictionary<string, XType>();
     }
 
@@ -37,14 +37,14 @@ public class XTable
 
     public void BagToRow(int rowIndex, XBag xBag)
     {
-        ReadOnlyDictionary<string, IXData> readOnlyDictionary = xBag.GetReadOnlyDictionary();
-        foreach (KeyValuePair<string, IXData> kv in readOnlyDictionary)
+        ReadOnlyDictionary<string, XValue> readOnlyDictionary = xBag.GetReadOnlyDictionary();
+        foreach (KeyValuePair<string, XValue> kv in readOnlyDictionary)
         {
             Put(rowIndex, kv.Key, kv.Value);
         }
     }
 
-    public void Put(int rowIndex, string columnKey, IXData value)
+    public void Put(int rowIndex, string columnKey, XValue value)
     {
         if (!Utility.IsValidJsonPropertyName(columnKey))
             throw new JsonException($"{columnKey} invalid key");
@@ -89,7 +89,7 @@ public class XTable
 
         while (rowIndex >= _rows.Count)
         {
-            List<IXData> row = new List<IXData>();
+            List<XValue> row = new List<XValue>();
             for (int i = 0; i < _columnKeys.Count; i++)
             {
                 row.Add(XValue.Create(_columnTypeMap[_columnKeys[i]], null));

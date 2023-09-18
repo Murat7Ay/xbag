@@ -271,7 +271,7 @@ public class XBagSerializationTests
     {
         // Arrange
         List<string> innerList = new List<string>();
-        IXData innerListValue = XValue.Create(XType.StringList, innerList);
+        XValue innerListValue = XValue.Create(XType.StringList, innerList);
 
         XTable table = new XTable();
         table.Put(0, "NestedList", innerListValue);
