@@ -365,5 +365,65 @@ public class XBagTests
         // Be sure to use proper synchronization mechanisms (e.g., locks) to ensure thread safety.
     }
     
+    [Test]
+    public void PutIfAbsent_KeyDoesNotExist_AddsValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue xValue = "Test";
+
+        // Act
+        xBag.PutIfAbsent("key1", xValue);
+
+        // Assert
+        Assert.AreEqual(xValue, xBag.Get("key1"));
+    }
+
+    [Test]
+    public void PutIfAbsent_KeyExists_DoesNotAddValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue initialValue = "InitialValue";
+        XValue newValue = "NewValue";
+        xBag.Put("key1", initialValue);
+
+        // Act
+        xBag.PutIfAbsent("key1", newValue);
+
+        // Assert
+        Assert.AreEqual(initialValue, xBag.Get("key1"));
+    }
+
+    [Test]
+    public void GetWithDefault_KeyExists_ReturnsValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue xValue = "Test";
+        xBag.Put("key1", xValue);
+        XValue defaultValue = "Default";
+
+        // Act
+        XValue result = xBag.GetWithDefault("key1", defaultValue);
+
+        // Assert
+        Assert.AreEqual(xValue, result);
+    }
+
+    [Test]
+    public void GetWithDefault_KeyDoesNotExist_ReturnsDefaultValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue defaultValue = "Default";
+
+        // Act
+        XValue result = xBag.GetWithDefault("nonexistentKey", defaultValue);
+
+        // Assert
+        Assert.AreEqual(defaultValue, result);
+    }
+    
     
 }

@@ -16,9 +16,20 @@ public class XBag
         _data[key] = value;
     }
 
+    public void PutIfAbsent(string key, XValue value)
+    {
+        if(!_data.ContainsKey(key))
+            Put(key, value);
+    }
+
     public XValue? Get(string key)
     {
         return _data.TryGetValue(key, out var value) ? value : null;
+    }
+
+    public XValue? GetWithDefault(string key, XValue defaultValue)
+    {
+        return _data.TryGetValue(key, out var value) ? value : defaultValue;
     }
 
     public ReadOnlyDictionary<string, XValue> GetReadOnlyDictionary()
