@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <PackageReference Include="LanguageExt.Core" Version="4.4.4" />
-      <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     </ItemGroup>
 
 </Project>

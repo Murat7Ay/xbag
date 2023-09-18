@@ -12,7 +12,7 @@ public class XValue : IXData
     {
     }
 
-    public XValue(XType xType, object? value)
+    private XValue(XType xType, object? value)
     {
         XType = xType;
         Value = value;
@@ -47,6 +47,30 @@ public class XValue : IXData
                type == typeof(XBag) ||
                type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
     }
+    public static implicit operator XValue(long value) => Create(XType.Long, value);
+
+    public static implicit operator XValue(string value) => Create(XType.String, value);
+
+    public static implicit operator XValue(bool value) => Create(XType.Bool, value);
+
+    public static implicit operator XValue(decimal value) => Create(XType.Decimal, value);
+
+    public static implicit operator XValue(double value) => Create(XType.Double, value);
+
+    public static implicit operator XValue(DateTime value) => Create(XType.Date, value);
+    
+    public static implicit operator XValue(XBag value) => Create(XType.Bag, value);
+    
+    public static implicit operator XValue(List<long> value) => Create(XType.LongList, value);
+
+    public static implicit operator XValue(List<string> value) => Create(XType.StringList, value);
+
+    public static implicit operator XValue(List<bool> value) => Create(XType.BoolList, value);
+
+    public static implicit operator XValue(List<decimal> value) => Create(XType.DecimalList, value);
+
+    public static implicit operator XValue(List<double> value) => Create(XType.DoubleList, value);
+
 
     public override bool Equals(object? obj)
     {

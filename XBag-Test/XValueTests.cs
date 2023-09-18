@@ -1,4 +1,5 @@
-﻿using XInfrastructure;
+﻿using System.Text.Json;
+using XInfrastructure;
 
 namespace XBagTests;
 
@@ -28,6 +29,7 @@ public class XValueTests
         Assert.That(xValueMinDouble.Value, Is.EqualTo(double.MinValue));
         Assert.That(xValueMaxDouble.Value, Is.EqualTo(double.MaxValue));
     }
+
     [Test]
     public void PutAndGetListValue()
     {
@@ -65,6 +67,82 @@ public class XValueTests
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => XValue.Create(XType.String, new object()));
     }
+
+    [Test]
+    public void CompareXValuesWithDifferentTypes()
+    {
+        var xValueLong = XValue.Create(XType.Long, 42L);
+        var xValueString = XValue.Create(XType.String, "42");
+
+        Assert.That(xValueLong.Equals(xValueString), Is.False);
+        Assert.That(xValueLong.GetHashCode(), Is.Not.EqualTo(xValueString.GetHashCode()));
+    }
+
+    [Test]
+    public void ImplicitConversionToXValue()
+    {
+        // Test implicit conversion from supported types to XValue
+        long longValue = 42L;
+        XValue xValueLong = longValue;
+        Assert.That(xValueLong.XType, Is.EqualTo(XType.Long));
+        Assert.That(xValueLong.Value, Is.EqualTo(longValue));
+
+        string stringValue = "Hello";
+        XValue xValueString = stringValue;
+        Assert.That(xValueString.XType, Is.EqualTo(XType.String));
+        Assert.That(xValueString.Value, Is.EqualTo(stringValue));
+
+        bool boolValue = true;
+        XValue xValueBool = boolValue;
+        Assert.That(xValueBool.XType, Is.EqualTo(XType.Bool));
+        Assert.That(xValueBool.Value, Is.EqualTo(boolValue));
+
+        decimal decimalValue = 42.42m;
+        XValue xValueDecimal = decimalValue;
+        Assert.That(xValueDecimal.XType, Is.EqualTo(XType.Decimal));
+        Assert.That(xValueDecimal.Value, Is.EqualTo(decimalValue));
+
+        double doubleValue = 42.42;
+        XValue xValueDouble = doubleValue;
+        Assert.That(xValueDouble.XType, Is.EqualTo(XType.Double));
+        Assert.That(xValueDouble.Value, Is.EqualTo(doubleValue));
+
+        DateTime dateTimeValue = DateTime.Now;
+        XValue xValueDateTime = dateTimeValue;
+        Assert.That(xValueDateTime.XType, Is.EqualTo(XType.Date));
+        Assert.That(xValueDateTime.Value, Is.EqualTo(dateTimeValue));
+
+        XBag xBagValue = new XBag();
+        XValue xValueXBag = xBagValue;
+        Assert.That(xValueXBag.XType, Is.EqualTo(XType.Bag));
+        Assert.That(xValueXBag.Value, Is.EqualTo(xBagValue));
+
+        List<long> longListValue = new List<long> { 1, 2, 3 };
+        XValue xValueLongList = longListValue;
+        Assert.That(xValueLongList.XType, Is.EqualTo(XType.LongList));
+        Assert.That(xValueLongList.Value, Is.EqualTo(longListValue));
+
+        List<string> stringListValue = new List<string> { "a", "b", "c" };
+        XValue xValueStringList = stringListValue;
+        Assert.That(xValueStringList.XType, Is.EqualTo(XType.StringList));
+        Assert.That(xValueStringList.Value, Is.EqualTo(stringListValue));
+
+        List<bool> boolListValue = new List<bool> { true, false, true };
+        XValue xValueBoolList = boolListValue;
+        Assert.That(xValueBoolList.XType, Is.EqualTo(XType.BoolList));
+        Assert.That(xValueBoolList.Value, Is.EqualTo(boolListValue));
+
+        List<decimal> decimalListValue = new List<decimal> { 1.1m, 2.2m, 3.3m };
+        XValue xValueDecimalList = decimalListValue;
+        Assert.That(xValueDecimalList.XType, Is.EqualTo(XType.DecimalList));
+        Assert.That(xValueDecimalList.Value, Is.EqualTo(decimalListValue));
+
+        List<double> doubleListValue = new List<double> { 1.1, 2.2, 3.3 };
+        XValue xValueDoubleList = doubleListValue;
+        Assert.That(xValueDoubleList.XType, Is.EqualTo(XType.DoubleList));
+        Assert.That(xValueDoubleList.Value, Is.EqualTo(doubleListValue));
+    }
+
 
     [Test]
     public void CompareXValueInstancesForEquality()
@@ -108,5 +186,16 @@ public class XValueTests
         // Assert
         Assert.That(xValue1.Value, Is.EqualTo(long.MaxValue));
         Assert.That(xValue2.Value, Is.EqualTo(long.MinValue));
+    }
+
+    [Test]
+    public void JsonSerializationDeserialization()
+    {
+        var originalValue = XValue.Create(XType.Long, 42L);
+        var options = new JsonSerializerOptions { Converters = { new XValueConverter() } };
+        var json = JsonSerializer.Serialize(originalValue, options);
+        var deserializedValue = JsonSerializer.Deserialize<XValue>(json, options);
+
+        Assert.That(deserializedValue, Is.EqualTo(originalValue));
     }
 }
