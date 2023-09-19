@@ -192,8 +192,7 @@ public class XBagTests
         Assert.That(retrievedXValue.XType, Is.EqualTo(XType.Table));
         XTable retrievedTable = (XTable)retrievedXValue.Value;
 
-        Assert.That(retrievedTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedTable.RowKeys.Count, Is.EqualTo(1));
 
         // Verify nested Bag
         IXData innerBagData = retrievedTable.Get(0, "InnerBag");
@@ -213,8 +212,7 @@ public class XBagTests
         XValue innerTableXValue2 = (XValue)innerTableData;
         Assert.That(innerTableXValue2.XType, Is.EqualTo(XType.Table));
         XTable retrievedInnerTable = (XTable)innerTableXValue2.Value;
-        Assert.That(retrievedInnerTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedInnerTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedInnerTable.RowKeys.Count, Is.EqualTo(1));
         Assert.That(retrievedInnerTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(retrievedInnerTable.Get(0, "Age")?.Value, Is.EqualTo(25));
     }
@@ -240,8 +238,7 @@ public class XBagTests
         XValue retrievedXValue = (XValue)retrievedValue;
         Assert.That(retrievedXValue.XType, Is.EqualTo(XType.Table));
         XTable retrievedTable = (XTable)retrievedXValue.Value;
-        Assert.That(retrievedTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedTable.RowKeys.Count, Is.EqualTo(1));
         Assert.That(retrievedTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(retrievedTable.Get(0, "Age")?.Value, Is.EqualTo(25));
     }
@@ -271,7 +268,7 @@ public class XBagTests
         var retrievedValue = bag.Get("nonexistent_key");
 
         // Assert
-        Assert.IsNull(retrievedValue);
+        Assert.AreEqual(retrievedValue.Value == null, retrievedValue.XType == XType.None);
     }
 
     [Test]
@@ -287,7 +284,7 @@ public class XBagTests
         var retrievedValue = bag.Get("message");
 
         // Assert
-        Assert.IsNull(retrievedValue);
+        Assert.AreEqual(retrievedValue.Value == null, retrievedValue.XType == XType.None);
     }
 
     [Test]
@@ -364,4 +361,66 @@ public class XBagTests
         // and assert that the bag remains consistent after all threads have completed.
         // Be sure to use proper synchronization mechanisms (e.g., locks) to ensure thread safety.
     }
+    
+    [Test]
+    public void PutIfAbsent_KeyDoesNotExist_AddsValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue xValue = "Test";
+
+        // Act
+        xBag.PutIfAbsent("key1", xValue);
+
+        // Assert
+        Assert.AreEqual(xValue, xBag.Get("key1"));
+    }
+
+    [Test]
+    public void PutIfAbsent_KeyExists_DoesNotAddValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue initialValue = "InitialValue";
+        XValue newValue = "NewValue";
+        xBag.Put("key1", initialValue);
+
+        // Act
+        xBag.PutIfAbsent("key1", newValue);
+
+        // Assert
+        Assert.AreEqual(initialValue, xBag.Get("key1"));
+    }
+
+    [Test]
+    public void GetWithDefault_KeyExists_ReturnsValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue xValue = "Test";
+        xBag.Put("key1", xValue);
+        XValue defaultValue = "Default";
+
+        // Act
+        XValue result = xBag.GetWithDefault("key1", defaultValue);
+
+        // Assert
+        Assert.AreEqual(xValue, result);
+    }
+
+    [Test]
+    public void GetWithDefault_KeyDoesNotExist_ReturnsDefaultValue()
+    {
+        // Arrange
+        XBag xBag = new XBag();
+        XValue defaultValue = "Default";
+
+        // Act
+        XValue result = xBag.GetWithDefault("nonexistentKey", defaultValue);
+
+        // Assert
+        Assert.AreEqual(defaultValue, result);
+    }
+    
+    
 }

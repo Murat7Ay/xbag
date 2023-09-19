@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 
 namespace XInfrastructure;
@@ -7,27 +8,38 @@ using System.Collections.Generic;
 
 public class XBag
 {
-    private readonly Dictionary<string, IXData> _data = new();
+    private readonly ConcurrentDictionary<string, XValue> _data = new();
 
-    public void Put(string key, IXData value)
+    public void Put(string key, XValue value)
     {
         if (!Utility.IsValidJsonPropertyName(key))
             throw new JsonException($"{key} invalid key");
         _data[key] = value;
     }
 
-    public IXData? Get(string key)
+    public void PutIfAbsent(string key, XValue value)
     {
-        return _data.TryGetValue(key, out var value) ? value : null;
+        if(!_data.ContainsKey(key))
+            Put(key, value);
     }
 
-    public ReadOnlyDictionary<string, IXData> GetReadOnlyDictionary()
+    public XValue Get(string key)
+    {
+        return _data.TryGetValue(key, out var value) ? value : XValue.Create(XType.None, null);
+    }
+
+    public XValue? GetWithDefault(string key, XValue defaultValue)
+    {
+        return _data.TryGetValue(key, out var value) ? value : defaultValue;
+    }
+
+    public ReadOnlyDictionary<string, XValue> GetReadOnlyDictionary()
     {
         return _data.AsReadOnly();
     }
 
     public bool Remove(string key)
     {
-        return _data.Remove(key);
+        return _data.Remove(key, out XValue value);
     }
 }

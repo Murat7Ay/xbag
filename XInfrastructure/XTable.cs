@@ -1,101 +1,53 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 
 namespace XInfrastructure;
 
 public class XTable
 {
-    private readonly List<string> _columnKeys;
-    private readonly List<List<IXData>> _rows;
-    private readonly Dictionary<string, XType> _columnTypeMap;
-
-    public int RowCount => _rows.Count;
-
-    public IReadOnlyList<string> GetColumns()
-    {
-        return _columnKeys.AsReadOnly();
-    }
-
-
+    private readonly ConcurrentDictionary<int, XBag> _rows;
+    public ICollection<int> RowKeys => _rows.Keys;
     public XTable()
     {
-        _columnKeys = new List<string>();
-        _rows = new List<List<IXData>>();
-        _columnTypeMap = new Dictionary<string, XType>();
+        _rows = new ConcurrentDictionary<int, XBag>();
     }
 
     public XBag RowToBag(int rowIndex)
     {
-        XBag xBag = new XBag();
-        int length = _columnKeys.Count;
-        for (int i = 0; i < length; i++)
-        {
-            xBag.Put(_columnKeys[i], _rows[rowIndex][i]);
-        }
-        return xBag;
+        return _rows.TryGetValue(rowIndex, out var bag) ? bag : new XBag();
     }
 
+    public bool RemoveRow(int rowIndex)
+    {
+        return _rows.TryRemove(rowIndex, out var bag);
+    }
     public void BagToRow(int rowIndex, XBag xBag)
     {
-        ReadOnlyDictionary<string, IXData> readOnlyDictionary = xBag.GetReadOnlyDictionary();
-        foreach (KeyValuePair<string, IXData> kv in readOnlyDictionary)
-        {
-            Put(rowIndex, kv.Key, kv.Value);
-        }
+        _rows[rowIndex] = xBag;
     }
 
-    public void Put(int rowIndex, string columnKey, IXData value)
+    public void Put(int rowIndex, string columnKey, XValue value)
     {
+        if (rowIndex < 0)
+            throw new ArgumentOutOfRangeException();
+        
         if (!Utility.IsValidJsonPropertyName(columnKey))
             throw new JsonException($"{columnKey} invalid key");
-        var columnIndex = ArrangeColumnIndex(rowIndex, columnKey, value);
-        _rows[rowIndex][columnIndex] = value;
-    }
-
-    public IXData Get(int rowIndex, string columnKey)
-    {
-        int columnIndex = _columnKeys.IndexOf(columnKey);
-        if (columnIndex == -1)
+        if (_rows.TryGetValue(rowIndex, out var xBag))
         {
-            return XValue.Create(XType.None, null);
-        }
-
-        return rowIndex >= _rows.Count ? XValue.Create(XType.None, null) : _rows[rowIndex][columnIndex];
-    }
-
-    private int ArrangeColumnIndex(int rowIndex, string columnKey, IXData xData)
-    {
-        if (_columnTypeMap.TryGetValue(columnKey, out XType xType))
-        {
-            if (xType != xData.XType)
-            {
-                throw new ArgumentException();
-            }
+            xBag.Put(columnKey, value);
         }
         else
         {
-            _columnTypeMap.Add(columnKey, xData.XType);
+            XBag bag = new XBag();
+            bag.Put(columnKey, value);
+            _rows[rowIndex] = bag;
         }
-        int columnIndex = _columnKeys.IndexOf(columnKey);
-        if (columnIndex == -1)
-        {
-            _columnKeys.Add(columnKey);
-            columnIndex = _columnKeys.Count - 1;
-            for (int i = 0; i < _rows.Count; i++)
-            {
-                _rows[i].Add(XValue.Create(xData.XType, null));
-            }
-        }
+    }
 
-        while (rowIndex >= _rows.Count)
-        {
-            List<IXData> row = new List<IXData>();
-            for (int i = 0; i < _columnKeys.Count; i++)
-            {
-                row.Add(XValue.Create(_columnTypeMap[_columnKeys[i]], null));
-            }
-            _rows.Add(row);
-        }
-        return columnIndex;
+    public XValue Get(int rowIndex, string columnKey)
+    {
+        return _rows[rowIndex].Get(columnKey);
     }
 }

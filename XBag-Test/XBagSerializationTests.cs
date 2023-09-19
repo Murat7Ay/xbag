@@ -271,7 +271,7 @@ public class XBagSerializationTests
     {
         // Arrange
         List<string> innerList = new List<string>();
-        IXData innerListValue = XValue.Create(XType.StringList, innerList);
+        XValue innerListValue = XValue.Create(XType.StringList, innerList);
 
         XTable table = new XTable();
         table.Put(0, "NestedList", innerListValue);
@@ -328,8 +328,7 @@ public class XBagSerializationTests
 
         // Assert
         Assert.IsNotNull(deserializedTable);
-        Assert.That(deserializedTable.RowCount, Is.EqualTo(2));
-        Assert.That(deserializedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(deserializedTable.RowKeys.Count, Is.EqualTo(2));
         Assert.That(deserializedTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(deserializedTable.Get(0, "Age")?.Value, Is.EqualTo(25));
         Assert.That(deserializedTable.Get(1, "Name")?.Value, Is.EqualTo("Bob"));
