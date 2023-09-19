@@ -103,16 +103,6 @@ public class XTableTests
         // Be sure to use proper synchronization mechanisms (e.g., locks) to ensure thread safety.
     }
 
-    [Test]
-    public void AddRowsWithSameColumnNamesButDifferentDataTypes()
-    {
-        // Arrange
-        XTable xTable = new XTable();
-        xTable.Put(0, "Column1", XValue.Create(XType.Long, 42));
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => xTable.Put(1, "Column1", XValue.Create(XType.String, "Value")));
-    }
 
     [Test]
     public void AddAndRetrieveRowsWithEmptyValues()

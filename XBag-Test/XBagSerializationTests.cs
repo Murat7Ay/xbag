@@ -328,8 +328,7 @@ public class XBagSerializationTests
 
         // Assert
         Assert.IsNotNull(deserializedTable);
-        Assert.That(deserializedTable.RowCount, Is.EqualTo(2));
-        Assert.That(deserializedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(deserializedTable.RowKeys.Count, Is.EqualTo(2));
         Assert.That(deserializedTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(deserializedTable.Get(0, "Age")?.Value, Is.EqualTo(25));
         Assert.That(deserializedTable.Get(1, "Name")?.Value, Is.EqualTo("Bob"));

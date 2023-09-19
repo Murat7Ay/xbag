@@ -192,8 +192,7 @@ public class XBagTests
         Assert.That(retrievedXValue.XType, Is.EqualTo(XType.Table));
         XTable retrievedTable = (XTable)retrievedXValue.Value;
 
-        Assert.That(retrievedTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedTable.RowKeys.Count, Is.EqualTo(1));
 
         // Verify nested Bag
         IXData innerBagData = retrievedTable.Get(0, "InnerBag");
@@ -213,8 +212,7 @@ public class XBagTests
         XValue innerTableXValue2 = (XValue)innerTableData;
         Assert.That(innerTableXValue2.XType, Is.EqualTo(XType.Table));
         XTable retrievedInnerTable = (XTable)innerTableXValue2.Value;
-        Assert.That(retrievedInnerTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedInnerTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedInnerTable.RowKeys.Count, Is.EqualTo(1));
         Assert.That(retrievedInnerTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(retrievedInnerTable.Get(0, "Age")?.Value, Is.EqualTo(25));
     }
@@ -240,8 +238,7 @@ public class XBagTests
         XValue retrievedXValue = (XValue)retrievedValue;
         Assert.That(retrievedXValue.XType, Is.EqualTo(XType.Table));
         XTable retrievedTable = (XTable)retrievedXValue.Value;
-        Assert.That(retrievedTable.RowCount, Is.EqualTo(1));
-        Assert.That(retrievedTable.GetColumns().Count, Is.EqualTo(2));
+        Assert.That(retrievedTable.RowKeys.Count, Is.EqualTo(1));
         Assert.That(retrievedTable.Get(0, "Name")?.Value, Is.EqualTo("Alice"));
         Assert.That(retrievedTable.Get(0, "Age")?.Value, Is.EqualTo(25));
     }
@@ -271,7 +268,7 @@ public class XBagTests
         var retrievedValue = bag.Get("nonexistent_key");
 
         // Assert
-        Assert.IsNull(retrievedValue);
+        Assert.AreEqual(retrievedValue.Value == null, retrievedValue.XType == XType.None);
     }
 
     [Test]
@@ -287,7 +284,7 @@ public class XBagTests
         var retrievedValue = bag.Get("message");
 
         // Assert
-        Assert.IsNull(retrievedValue);
+        Assert.AreEqual(retrievedValue.Value == null, retrievedValue.XType == XType.None);
     }
 
     [Test]

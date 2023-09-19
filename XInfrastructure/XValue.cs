@@ -1,14 +1,17 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace XInfrastructure;
 
+[DebuggerDisplay("{DebuggerDisplay}")]
 public class XValue : IXData
 {
     public XType XType { get; }
     public object? Value { get; }
 
     [JsonConstructor]
-    public XValue()
+    private XValue()
     {
     }
 
@@ -47,6 +50,7 @@ public class XValue : IXData
                type == typeof(XBag) ||
                type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>);
     }
+
     public static implicit operator XValue(long value) => Create(XType.Long, value);
 
     public static implicit operator XValue(string value) => Create(XType.String, value);
@@ -58,9 +62,9 @@ public class XValue : IXData
     public static implicit operator XValue(double value) => Create(XType.Double, value);
 
     public static implicit operator XValue(DateTime value) => Create(XType.Date, value);
-    
+
     public static implicit operator XValue(XBag value) => Create(XType.Bag, value);
-    
+
     public static implicit operator XValue(List<long> value) => Create(XType.LongList, value);
 
     public static implicit operator XValue(List<string> value) => Create(XType.StringList, value);
@@ -90,6 +94,34 @@ public class XValue : IXData
             hash = hash * 23 + XType.GetHashCode();
             hash = hash * 23 + (Value?.GetHashCode() ?? 0);
             return hash;
+        }
+    }
+
+    [DebuggerStepThrough]
+    public override string ToString()
+    {
+        if (Value != null)
+        {
+            return $"{XType}: {Value}";
+        }
+        else
+        {
+            return $"{XType}: null";
+        }
+    }
+
+    private string DebuggerDisplay
+    {
+        get
+        {
+            if (Value != null)
+            {
+                return $"{XType}: {JsonSerializer.Serialize(Value)}";
+            }
+            else
+            {
+                return $"{XType}: null";
+            }
         }
     }
 }

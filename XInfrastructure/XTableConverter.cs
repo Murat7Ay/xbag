@@ -24,6 +24,7 @@ public class XTableConverter : JsonConverter<XTable>
                             XValue value = JsonSerializer.Deserialize<XValue>(property.Value.GetRawText(), options);
                             row.Put(key, value);
                         }
+
                         xTable.BagToRow(index, row);
                         index++;
                     }
@@ -39,19 +40,11 @@ public class XTableConverter : JsonConverter<XTable>
     public override void Write(Utf8JsonWriter writer, XTable value, JsonSerializerOptions options)
     {
         writer.WriteStartArray();
-        for (int i = 0; i < value.RowCount; i++)
+        foreach (var rowIndex in value.RowKeys)
         {
-            writer.WriteStartObject();
-            foreach (var column in value.GetColumns())
-            {
-                IXData cell = value.Get(i, column);
-                writer.WritePropertyName(column);
-                JsonSerializer.Serialize(writer, cell, cell.GetType(), options);
-            }
-
-            writer.WriteEndObject();
+            XBag bag = value.RowToBag(rowIndex);
+            JsonSerializer.Serialize(writer, bag, bag.GetType(), options);
         }
-
         writer.WriteEndArray();
     }
 }

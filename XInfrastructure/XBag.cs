@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 
 namespace XInfrastructure;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 
 public class XBag
 {
-    private readonly Dictionary<string, XValue> _data = new();
+    private readonly ConcurrentDictionary<string, XValue> _data = new();
 
     public void Put(string key, XValue value)
     {
@@ -22,9 +23,9 @@ public class XBag
             Put(key, value);
     }
 
-    public XValue? Get(string key)
+    public XValue Get(string key)
     {
-        return _data.TryGetValue(key, out var value) ? value : null;
+        return _data.TryGetValue(key, out var value) ? value : XValue.Create(XType.None, null);
     }
 
     public XValue? GetWithDefault(string key, XValue defaultValue)
@@ -39,6 +40,6 @@ public class XBag
 
     public bool Remove(string key)
     {
-        return _data.Remove(key);
+        return _data.Remove(key, out XValue value);
     }
 }
