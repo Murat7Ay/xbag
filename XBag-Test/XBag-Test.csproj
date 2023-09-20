@@ -19,6 +19,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\DynamicCodeExecution.CSharp\DynamicCodeExecution.CSharp.csproj" />
+      <ProjectReference Include="..\DynamicCodeExecution.DotNet\DynamicCodeExecution.DotNet.csproj" />
       <ProjectReference Include="..\XInfrastructure\XInfrastructure.csproj" />
     </ItemGroup>
 

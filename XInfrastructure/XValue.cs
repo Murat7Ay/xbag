@@ -74,6 +74,7 @@ public class XValue : IXData
     public static implicit operator XValue(List<decimal> value) => Create(XType.DecimalList, value);
 
     public static implicit operator XValue(List<double> value) => Create(XType.DoubleList, value);
+    public static implicit operator XValue(XTable value) => Create(XType.Table, value);
 
     public override bool Equals(object? obj)
     {

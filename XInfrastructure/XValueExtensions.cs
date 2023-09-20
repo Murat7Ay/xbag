@@ -225,4 +225,30 @@ public static class XValueExtensions
 
         return new List<string>();
     }
+    
+    public static XBag To_Bag(this XValue value)
+    {
+        if (value.XType == XType.Bag)
+        {
+            if (value.Value is XBag bag)
+            {
+                return bag;
+            }
+        }
+
+        return new XBag();
+    }
+    
+    public static XTable To_Table(this XValue value)
+    {
+        if (value.XType == XType.Table)
+        {
+            if (value.Value is XTable table)
+            {
+                return table;
+            }
+        }
+
+        return new XTable();
+    }
 }
