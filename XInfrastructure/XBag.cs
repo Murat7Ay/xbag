@@ -23,12 +23,17 @@ public class XBag
             Put(key, value);
     }
 
+    public bool ContainsKey(string key)
+    {
+        return _data.ContainsKey(key);
+    }
+
     public XValue Get(string key)
     {
         return _data.TryGetValue(key, out var value) ? value : XValue.Create(XType.None, null);
     }
 
-    public XValue? GetWithDefault(string key, XValue defaultValue)
+    public XValue GetWithDefault(string key, XValue defaultValue)
     {
         return _data.TryGetValue(key, out var value) ? value : defaultValue;
     }
@@ -40,6 +45,6 @@ public class XBag
 
     public bool Remove(string key)
     {
-        return _data.Remove(key, out XValue value);
+        return _data.Remove(key, out _);
     }
 }

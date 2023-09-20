@@ -75,7 +75,6 @@ public class XValue : IXData
 
     public static implicit operator XValue(List<double> value) => Create(XType.DoubleList, value);
 
-
     public override bool Equals(object? obj)
     {
         if (obj is XValue other)
