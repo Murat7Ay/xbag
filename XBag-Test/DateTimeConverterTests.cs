@@ -22,6 +22,6 @@ public class DateTimeConverterTests
 
         // Assert
         Assert.AreEqual(originalDateTime, deserializedDateTime);
-        Assert.AreEqual(true, json.Contains("20230917 123456 789")); // Ensure the custom format is used in serialization
+        Assert.AreEqual(true, json.Contains("20230917123456789")); // Ensure the custom format is used in serialization
     }
 }

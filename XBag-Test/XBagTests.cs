@@ -1,9 +1,15 @@
-using LanguageExt;
+using System.Diagnostics.CodeAnalysis;
 using XInfrastructure;
+// ReSharper disable StringLiteralTypo
 
 namespace XBagTests;
+// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+// ReSharper disable RedundantCast
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 
 [TestFixture]
+[SuppressMessage("Assertion", "NUnit2005:Consider using Assert.That(actual, Is.EqualTo(expected)) instead of Assert.AreEqual(expected, actual)")]
 public class XBagTests
 {
      [Test]

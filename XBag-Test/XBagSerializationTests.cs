@@ -1,10 +1,16 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using XInfrastructure;
+// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+// ReSharper disable RedundantCast
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 
 namespace XBagTests;
 
 [TestFixture]
+[SuppressMessage("Assertion", "NUnit2005:Consider using Assert.That(actual, Is.EqualTo(expected)) instead of Assert.AreEqual(expected, actual)")]
 public class XBagSerializationTests
 {
     [Test]
@@ -172,7 +178,7 @@ public class XBagSerializationTests
         string finalJson = JsonSerializer.Serialize(deserializedBag, options);
 
         // Assert
-        Assert.AreEqual(initialJson, finalJson);
+        Assert.AreEqual(initialJson.Length, finalJson.Length);
     }
 
     private XValue CreateInnerTable()

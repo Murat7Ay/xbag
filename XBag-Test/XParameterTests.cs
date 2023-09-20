@@ -1,11 +1,16 @@
-﻿using System.Reflection;
-using LanguageExt.ClassInstances;
-using NUnit.Framework;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using XInfrastructure;
+// ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+// ReSharper disable RedundantCast
+#pragma warning disable CS8600
+#pragma warning disable CS8602
 
 namespace XBagTests;
 
+
 [TestFixture]
+[SuppressMessage("Assertion", "NUnit2005:Consider using Assert.That(actual, Is.EqualTo(expected)) instead of Assert.AreEqual(expected, actual)")]
 public class XParameterTests
 {
     
@@ -80,7 +85,7 @@ public class XParameterTests
         // Arrange
 
         // Create a test assembly with classes and methods decorated with XMethodAttribute and XParameterAttribute.
-        var assembly = TestAssemblyHelper.LoadTestAssembly();
+        TestAssemblyHelper.LoadTestAssembly();
 
         // Act
         var detectedMethods = XDetector.DetectMethods();
