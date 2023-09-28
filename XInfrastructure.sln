@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "ConsoleApp\Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XShell", "XShell\XShell.csproj", "{49075B71-F496-432D-B387-78CC8DCAD5EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDataAccess", "XDataAccess\XDataAccess.csproj", "{DB71D438-9231-414D-A03A-E35CD72DF3B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{49075B71-F496-432D-B387-78CC8DCAD5EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49075B71-F496-432D-B387-78CC8DCAD5EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49075B71-F496-432D-B387-78CC8DCAD5EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
