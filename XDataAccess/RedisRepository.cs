@@ -9,13 +9,23 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 {
     private readonly IDatabase _database;
     private readonly RedisCollection<TEntity> _collection;
-    private readonly SessionUser _user;
+    private readonly RedisCollection<EntityHistory> _historyCollection;
+    private readonly AuthUser _user;
     private readonly IClock _clock;
     private readonly IFilterCondition _filterCondition;
+    private string EntityName => typeof(TEntity).Name;
+    private RedisKey EntityXIdKey => $"{EntityName}:{nameof(Entity.XId)}";
+
+    private async Task<string> GetNextEntityXId()
+    {
+        long id = await _database.StringIncrementAsync(EntityXIdKey);
+        string timestamp = _clock.DateTimeOffset.ToUnixTimeMilliseconds().ToString();
+        return $"{timestamp}{id}";
+    }
 
     public RedisRepository(
         ConfigurationOptions configurationOptions,
-        SessionUser user,
+        AuthUser user,
         IClock clock,
         IFilterCondition filterCondition)
     {
@@ -24,6 +34,7 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         _filterCondition = filterCondition;
         var provider = new RedisConnectionProvider(configurationOptions);
         _collection = (RedisCollection<TEntity>)provider.RedisCollection<TEntity>();
+        _historyCollection = (RedisCollection<EntityHistory>)provider.RedisCollection<EntityHistory>();
         IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(configurationOptions);
         _database = multiplexer.GetDatabase();
     }
@@ -33,7 +44,6 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         var filteredQuery = query
             .WhereIf(_filterCondition.GetFilter("IsDeleted"), x => !x.IsDeleted)
             .WhereIf(_filterCondition.GetFilter("IsActive"), x => x.IsActive);
-
         return filteredQuery;
     }
 
@@ -80,19 +90,21 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     {
         if (!string.IsNullOrEmpty(entity.Id))
         {
-            throw new Exception("Id must be null");
+            throw new ArgumentException("Id must be null for new entities.", nameof(entity.Id));
         }
 
-        InitializeEntityForInsert(entity);
+        await InitializeEntityForInsertAsync(entity);
         return await _collection.InsertAsync(entity);
     }
 
-    private void InitializeEntityForInsert(TEntity entity)
+    private async Task InitializeEntityForInsertAsync(TEntity entity)
     {
+        entity.XId = await GetNextEntityXId();
         entity.CreateDate = _clock.Now;
         entity.CreatedBy = _user.Id;
         entity.Ip = _user.Ip;
         entity.Host = _user.Host;
+        entity.TraceId = _user.TraceId;
     }
 
     public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
@@ -103,7 +115,8 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         }
 
         InitializeEntityForUpdate(entity);
-        await CheckAndIncrementEntityVersion(entity);
+        TEntity existingEntity = await CheckAndIncrementEntityVersion(entity);
+        await SaveHistory(entity.GetChanges(existingEntity));
         await _collection.UpdateAsync(entity);
     }
 
@@ -113,14 +126,14 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         entity.ModifyDate = _clock.Now;
         entity.Ip = _user.Ip;
         entity.Host = _user.Host;
+        entity.TraceId = _user.TraceId;
     }
 
-    private async Task CheckAndIncrementEntityVersion(TEntity entity)
+    private async Task<TEntity> CheckAndIncrementEntityVersion(TEntity entity)
     {
         if (entity.Id != null)
         {
             TEntity? existingEntity = await _collection.FindByIdAsync(entity.Id);
-
             if (existingEntity is null)
             {
                 throw new Exception("Entity is null");
@@ -130,38 +143,48 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
             {
                 throw new Exception("Entity has been modified");
             }
-            
+
+            if (existingEntity.XId != entity.XId)
+            {
+                throw new Exception("Entity has been modified");
+            }
+
             entity.EntityVersion++;
+            return existingEntity;
         }
+
+        throw new ArgumentNullException(nameof(entity));
     }
 
     public async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        InitializeEntityForUpdate(entity);
-        await CheckAndMarkEntityAsDeleted(entity);
-        await _collection.UpdateAsync(entity);
+        TEntity existingEntity = await CheckAndMarkEntityAsDeleted(entity);
+        await _collection.UpdateAsync(existingEntity);
     }
 
-    private async Task CheckAndMarkEntityAsDeleted(TEntity entity)
+    private async Task<TEntity> CheckAndMarkEntityAsDeleted(TEntity entity)
     {
-        if (entity.Id != null)
+        if (entity.Id == null) throw new ArgumentNullException(nameof(entity));
+        TEntity? existingEntity = await _collection.FindByIdAsync(entity.Id);
+
+        if (existingEntity is null)
         {
-            TEntity? existingEntity = await _collection.FindByIdAsync(entity.Id);
-
-            if (existingEntity is null)
-            {
-                throw new Exception("Entity is null");
-            }
-
-            if (existingEntity.EntityVersion != entity.EntityVersion)
-            {
-                throw new Exception("Entity has been modified");
-            }
-
-            existingEntity.DeletedBy = _user.Id;
-            existingEntity.DeleteDate = _clock.Now;
-            existingEntity.IsDeleted = true;
+            throw new Exception("Entity is null");
         }
+
+        if (existingEntity.EntityVersion != entity.EntityVersion)
+        {
+            throw new Exception("Entity has been modified");
+        }
+
+        existingEntity.DeletedBy = _user.Id;
+        existingEntity.DeleteDate = _clock.Now;
+        existingEntity.IsDeleted = true;
+        existingEntity.TraceId = _user.TraceId;
+        existingEntity.Ip = _user.Ip;
+        existingEntity.Host = _user.Host;
+        existingEntity.TraceId = _user.TraceId;
+        return existingEntity;
     }
 
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate,
@@ -175,5 +198,15 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     {
         var filteredQuery = ApplyFiltering(_collection);
         return await filteredQuery.FindByIdAsync(id);
+    }
+
+    public async Task<IList<EntityHistory>> GetHistory(string id, CancellationToken cancellationToken = default)
+    {
+        return await _historyCollection.Where(x => x.EntityId == id).ToListAsync();
+    }
+
+    private async Task<string> SaveHistory(EntityHistory history)
+    {
+        return await _historyCollection.InsertAsync(history);
     }
 }

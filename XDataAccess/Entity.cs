@@ -7,9 +7,13 @@ public abstract class Entity
 {
     [RedisIdField] [Indexed] public string? Id { get; set; }
     [Indexed]
+    public string? XId { get; set; }
+    [Indexed]
     public bool IsDeleted { get; set; }
     [Indexed]
     public bool IsActive { get; set; }
+    [Indexed]
+    public string? TraceId { get; set; }
     public string? DeletedBy { get; set; }
     public DateTime? DeleteDate { get; set; }
     public DateTime? ModifyDate { get; set; }
@@ -25,6 +29,7 @@ public abstract class Entity
         return new object?[] { Id };
     }
 
+    public abstract EntityHistory GetChanges(Entity compare);
     public override string ToString()
     {
         return $"[ENTITY: {GetType().Name}] Id = {Id}";

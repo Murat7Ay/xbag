@@ -1,6 +1,6 @@
 ﻿namespace XDataAccess;
 
-public interface ISessionUser
+public interface IAuthUser
 {
     string? Id { get;  set; }
     string? Ip { get;  set;}
