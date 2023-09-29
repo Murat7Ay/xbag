@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace XDataAccess;
 
-public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Entity
+public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : IEntity<TEntity>
 {
     private readonly IDatabase _database;
     private readonly RedisCollection<TEntity> _collection;
@@ -14,12 +14,12 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     private readonly IClock _clock;
     private readonly IFilterCondition _filterCondition;
     private string EntityName => typeof(TEntity).Name;
-    private RedisKey EntityXIdKey => $"{EntityName}:{nameof(Entity.XId)}";
+    private RedisKey EntityXIdKey => $"{EntityName}:{nameof(IEntity<TEntity>.XId)}";
 
     private async Task<string> GetNextEntityXId()
     {
         long id = await _database.StringIncrementAsync(EntityXIdKey);
-        string timestamp = _clock.DateTimeOffset.ToUnixTimeMilliseconds().ToString();
+        string timestamp = _clock.Now.ToString("yyMMdd");
         return $"{timestamp}{id}";
     }
 
@@ -41,10 +41,12 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 
     private IRedisCollection<TEntity> ApplyFiltering(IRedisCollection<TEntity> query)
     {
-        var filteredQuery = query
-            .WhereIf(_filterCondition.GetFilter("IsDeleted"), x => !x.IsDeleted)
-            .WhereIf(_filterCondition.GetFilter("IsActive"), x => x.IsActive);
-        return filteredQuery;
+        // var filteredQuery = query
+        // .WhereIf(_filterCondition.GetFilter("IsDeleted"), x => !x.IsDeleted)
+        // .WhereIf(_filterCondition.GetFilter("IsActive"), x => x.IsActive);
+        return query.Where(x =>
+            x.IsDeleted == _filterCondition.GetFilter("IsDeleted") &&
+            x.IsActive == _filterCondition.GetFilter("IsActive"));
     }
 
     public async Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
@@ -105,6 +107,7 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         entity.Ip = _user.Ip;
         entity.Host = _user.Host;
         entity.TraceId = _user.TraceId;
+        entity.IsActive = true;
     }
 
     public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
@@ -205,8 +208,9 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         return await _historyCollection.Where(x => x.EntityId == id).ToListAsync();
     }
 
-    private async Task<string> SaveHistory(EntityHistory history)
+    private async Task<string> SaveHistory(IList<EntityChange> historyChanges)
     {
+        var history = new EntityHistory();
         return await _historyCollection.InsertAsync(history);
     }
 }

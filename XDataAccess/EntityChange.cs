@@ -1,7 +1,7 @@
 ﻿namespace XDataAccess;
 
 [Serializable]
-public class EntityHistoryChange
+public class EntityChange
 {
     public string? Name { get; set; }
     public string? OldValue { get; set; }

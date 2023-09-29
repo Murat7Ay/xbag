@@ -1,9 +1,9 @@
 ﻿namespace XDataAccess;
 
-public abstract class AuthUser : IAuthUser
+public  class AuthUser : IAuthUser
 {
-    public string? Id { get; set; }
-    public string? Ip { get; set; }
-    public string? Host { get; set; }
-    public string? TraceId { get; set; }
+    public string? Id { get; set; } = "TEST_ID";
+    public string? Ip { get; set; } = "TEST_IP";
+    public string? Host { get; set; } = "TEST_HOST";
+    public string? TraceId { get; set; } = "TEST_TRACEID";
 }

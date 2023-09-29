@@ -24,7 +24,7 @@ public static class SomeExtensions
     }
 
     public static IRedisCollection<T> WhereIf<T>(this IRedisCollection<T> query, bool condition,
-        Expression<Func<T, bool>> predicate) where T : Entity
+        Expression<Func<T, bool>> predicate) where T : IEntity<T>
     {
         Check.NotNull(query, nameof(query));
 
@@ -33,7 +33,7 @@ public static class SomeExtensions
             : query;
     }
 
-    public static IRedisCollection<T> OrderBySorting<T>(this IRedisCollection<T> query, string sorting) where T : Entity
+    public static IRedisCollection<T> OrderBySorting<T>(this IRedisCollection<T> query, string sorting) where T : IEntity<T>
     {
         var sortingItems = sorting.Split(',').Select(item => item.Trim());
 

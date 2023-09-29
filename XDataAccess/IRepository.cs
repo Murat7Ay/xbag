@@ -3,7 +3,7 @@
 namespace XDataAccess;
 
 public interface IRepository<TEntity> : IReadOnlyRepository<TEntity>, IBasicRepository<TEntity>, IHistoryRepository<TEntity>
-    where TEntity : Entity
+    where TEntity : IEntity<TEntity>
 {
     public Task<TEntity?> FindAsync(
         Expression<Func<TEntity, bool>> predicate,
@@ -20,7 +20,7 @@ public interface IRepository
 {
 }
 
-public interface IHistoryRepository<TEntity> where TEntity : Entity
+public interface IHistoryRepository<TEntity> where TEntity : IEntity<TEntity>
 {
     public Task<IList<EntityHistory>> GetHistory(string id, CancellationToken cancellationToken = default);
     

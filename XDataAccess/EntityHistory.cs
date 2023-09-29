@@ -13,7 +13,7 @@ public class EntityHistory
     public string? EntityName { get; set; }
     [Indexed]
     public string? EntityId { get; set; }    
-    public List<EntityHistoryChange> Changes { get; set; } = new();
+    public List<EntityChange> Changes { get; set; } = new();
     public string? TraceId { get; set; }
     public DateTime? ChangeDate { get; set; }
     public string? UserId { get; set; }
