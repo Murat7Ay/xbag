@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XShell", "XShell\XShell.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDataAccess", "XDataAccess\XDataAccess.csproj", "{DB71D438-9231-414D-A03A-E35CD72DF3B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X.Api", "X.Api\X.Api.csproj", "{86E05305-5ABA-44B8-B81F-AD06765CB7BB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +56,9 @@ Global
 		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB71D438-9231-414D-A03A-E35CD72DF3B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
