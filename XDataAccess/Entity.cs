@@ -2,7 +2,7 @@
 
 namespace XDataAccess;
 
-internal interface IEntity<TEntity>
+internal interface IEntity<in TEntity>
 {
     string? Id { get; set; }
     string? XId { get; set; }
@@ -22,17 +22,17 @@ internal interface IEntity<TEntity>
     IList<EntityChange>  GetChanges(TEntity compare);
 }
 
-public abstract class Entity<TEntity> : IEntity<TEntity>
+public abstract  class Entity<TEntity> : IEntity<TEntity>
 {
-    [RedisIdField, Indexed] 
+    [RedisIdField] 
     public string? Id { get; set; }
-    [Indexed]
+    [Searchable]
     public string? XId { get; set; }
-    [Indexed]
+    [Searchable]
     public bool IsDeleted { get; set; }
-    [Indexed]
+    [Searchable]
     public bool IsActive { get; set; }
-    [Indexed, Searchable]
+    [Searchable]
     public string? TraceId { get; set; }
     public string? DeletedBy { get; set; }
     public DateTime? DeleteDate { get; set; }
@@ -49,7 +49,10 @@ public abstract class Entity<TEntity> : IEntity<TEntity>
         return new object?[] { Id };
     }
 
-    public abstract IList<EntityChange> GetChanges(TEntity compare);
+    public virtual IList<EntityChange> GetChanges(TEntity compare)
+    {
+        return new List<EntityChange>();
+    }
     public override string ToString()
     {
         return $"[ENTITY: {GetType().Name}] Id = {Id}";

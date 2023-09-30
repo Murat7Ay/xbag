@@ -1,82 +1,116 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Redis.OM;
-using Redis.OM.Contracts;
-using Redis.OM.Modeling;
 using StackExchange.Redis;
+using X.Api;
 using XDataAccess;
 
+
 var builder = WebApplication.CreateBuilder(args);
+string redisPort = builder.Configuration["Redis:Port"]!;
+var secretKey = ApiSettings.GenerateSecretByte();
+
+builder.Services.AddAuthentication(config =>
+{
+    config.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    config.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(config =>
+{
+    config.RequireHttpsMetadata = false;
+    config.SaveToken = true;
+    config.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("reader", policy => policy.RequireRole("reader"));
+    options.AddPolicy("moderator", policy => policy.RequireRole("moderator"));
+    options.AddPolicy("root", policy => policy.RequireRole("root"));
+});
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Internal Generator Apis", Version = "v1" });
+    OpenApiSecurityScheme securityDefinition = new OpenApiSecurityScheme()
+    {
+        Name = "Authorization",
+        BearerFormat = "JWT",
+        Scheme = "Bearer",
+        Description = "Specify the authorization token",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+    };
+    c.AddSecurityDefinition("Bearer", securityDefinition);
+    OpenApiSecurityRequirement securityRequirement = new OpenApiSecurityRequirement();
+    OpenApiSecurityScheme secondSecurityDefinition = new OpenApiSecurityScheme
+    {
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+        }
+    };
+    securityRequirement.Add(secondSecurityDefinition, new string[] { });
+    c.AddSecurityRequirement(securityRequirement);
+});
 builder.Services.AddSingleton(new RedisConnectionProvider(new ConfigurationOptions
-    { EndPoints = { "localhost:6379" } }));
-builder.Services.AddHostedService<IndexCreationService>();
+    { EndPoints = { redisPort } }));
+builder.Services.AddSingleton<IDatabase>(cfg =>
+{
+    IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(redisPort);
+    return multiplexer.GetDatabase();
+});
+builder.Services.AddTransient<IClock>(_ => new Clock());
+builder.Services.AddTransient<IFilterCondition>(_ => new FilterCondition());
+builder.Services.AddTransient<IAuthUser>(_ => new AuthUser());
+builder.Services.AddTransient<IClock>(_ => new Clock());
+builder.Services.AddHostedService<CreateIndexHostedService>();
+builder.Services.AddSingleton<TokenService>();
+builder.Services.AddHttpContextAccessor();
+RegisterEntities.AddRepositories(builder);
 var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseSwagger();
+app.UseSwaggerUI();
+RegisterEntities.AddApis(app);
 
-app.MapGet("/", async () =>
-{
-    var conf = new ConfigurationOptions
-    {
-        EndPoints = { "localhost:6379" }
-    };
-    var rep = new RedisRepository<EntityExample>(conf, new AuthUser(), new Clock(), new FilterCondition());
-
-    return await rep.GetListAsync(entity => entity.Prop1 == "1cdd129c-0e08-4024-ab19-1a20a9439e83" && entity.IsDeleted == false);
-});
-app.MapPost("/test", async (EntityExample entity, CancellationToken cancellationToken) =>
-{
-    var conf = new ConfigurationOptions
-    {
-        EndPoints = { "localhost:6379" }
-    };
-    var rep = new RedisRepository<EntityExample>(conf, new AuthUser(), new Clock(), new FilterCondition());
-
-    return await rep.GetListAsync(test1Entity => test1Entity.XId == "2309301");
-});
-
+app.MapPut("/user", SaveUser());
+app.MapPost("/login", LoginUser());
 app.Run();
 
-[Document(StorageType = StorageType.Json, Prefixes = new[] { "EntityExample" })]
-public class EntityExample : Entity<EntityExample>
+Func<TokenService, IRepository<UserEntity>, UserEntity, Task<string>> LoginUser()
 {
-    [Searchable]
-    public string? Prop1 { get; set; }
-
-    public override IList<EntityChange> GetChanges(EntityExample compare)
+    return async (service, userRepository, userModel) =>
     {
-        return new List<EntityChange>()
-        {
-            new EntityChange
-            {
-                Name = nameof(Prop1),
-                NewValue = Prop1,
-                OldValue = compare?.Prop1
-            }
-        };
-    }
+        var hashed = service.GetPasswordHash(userModel.Password);
+        var use1r = await userRepository.FindByIdAsync("01HBKZ6014WW3HTTFJFQBF7359");
+        var userEntities = await userRepository.GetListAsync();
+        if (!userEntities.Any()) return "Invalid username or password";
+        var user = userEntities.SingleOrDefault();
+        if (user is null)
+            return "Invalid username or password";
+        var token = service.GenerateToken(user);
+        user.Password = string.Empty;
+        return token;
+    };
 }
 
-
-public class IndexCreationService : IHostedService
+Func<IRepository<UserEntity>, TokenService, UserEntity, Task<string>> SaveUser()
 {
-    private readonly RedisConnectionProvider _provider;
-
-    public IndexCreationService(RedisConnectionProvider provider)
+    return async (repository, service, entity) =>
     {
-        _provider = provider;
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        var entityTypes = System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
-            .Where(mytype => mytype.IsClass && mytype.GetInterfaces().Contains(typeof(Entity<>)));
-        IRedisConnection connection = _provider.Connection;
-        foreach (Type entity in entityTypes)
-        {
-            await connection.CreateIndexAsync(entity);
-        }
-        await _provider.Connection.CreateIndexAsync(typeof(EntityExample));
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
+        var user = await repository.GetListAsync(x => x.Name == entity.Name);
+        if (user.Count > 0)
+            throw new Exception();
+        entity.Password = service.GetPasswordHash(entity.Password);
+        return await repository.InsertAsync(entity);
+    };
 }

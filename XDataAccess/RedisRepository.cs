@@ -10,7 +10,7 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     private readonly IDatabase _database;
     private readonly RedisCollection<TEntity> _collection;
     private readonly RedisCollection<EntityHistory> _historyCollection;
-    private readonly AuthUser _user;
+    private readonly IAuthUser _user;
     private readonly IClock _clock;
     private readonly IFilterCondition _filterCondition;
     private string EntityName => typeof(TEntity).Name;
@@ -24,44 +24,43 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     }
 
     public RedisRepository(
-        ConfigurationOptions configurationOptions,
-        AuthUser user,
+        RedisConnectionProvider provider,
+        IDatabase database,
+        IAuthUser user,
         IClock clock,
         IFilterCondition filterCondition)
     {
         _user = user;
         _clock = clock;
         _filterCondition = filterCondition;
-        var provider = new RedisConnectionProvider(configurationOptions);
         _collection = (RedisCollection<TEntity>)provider.RedisCollection<TEntity>();
         _historyCollection = (RedisCollection<EntityHistory>)provider.RedisCollection<EntityHistory>();
-        IConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(configurationOptions);
-        _database = multiplexer.GetDatabase();
+        _database = database;
     }
 
     private IRedisCollection<TEntity> ApplyFiltering(IRedisCollection<TEntity> query)
     {
-        // var filteredQuery = query
-        // .WhereIf(_filterCondition.GetFilter("IsDeleted"), x => !x.IsDeleted)
-        // .WhereIf(_filterCondition.GetFilter("IsActive"), x => x.IsActive);
+        bool isDeletedFilter = _filterCondition.GetFilter("IsDeleted");
+        bool isActiveFilter = _filterCondition.GetFilter("IsActive");
         return query.Where(x =>
-            x.IsDeleted == _filterCondition.GetFilter("IsDeleted") &&
-            x.IsActive == _filterCondition.GetFilter("IsActive"));
+            x.IsDeleted == isDeletedFilter&&
+            x.IsActive == isActiveFilter);
     }
 
-    public async Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
+    public  Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
         CancellationToken cancellationToken = default)
     {
         // var filteredQuery = ApplyFiltering(_collection);
-        return await _collection
+        return _collection
             .Where(predicate)
             .ToListAsync();
+
     }
 
     public async Task<IList<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
-        var filteredQuery = ApplyFiltering(_collection);
-        return await filteredQuery.ToListAsync();
+        // var filteredQuery = ApplyFiltering(_collection);
+        return await _collection.ToListAsync();
     }
 
     public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
