@@ -50,8 +50,8 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     public  Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
         CancellationToken cancellationToken = default)
     {
-        // var filteredQuery = ApplyFiltering(_collection);
-        return _collection
+        var filteredQuery = ApplyFiltering(_collection);
+        return filteredQuery
             .Where(predicate)
             .ToListAsync();
 
@@ -59,8 +59,8 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 
     public async Task<IList<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
     {
-        // var filteredQuery = ApplyFiltering(_collection);
-        return await _collection.ToListAsync();
+        var filteredQuery = ApplyFiltering(_collection);
+        return await filteredQuery.ToListAsync();
     }
 
     public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
