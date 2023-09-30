@@ -22,6 +22,6 @@ public interface IRepository
 
 public interface IHistoryRepository<TEntity> where TEntity : Entity<TEntity>
 {
-    public Task<IList<EntityHistory>> GetHistory(string id, CancellationToken cancellationToken = default);
+    public Task<IList<EntityHistory>> GetHistoryAsync(string id, CancellationToken cancellationToken = default);
     
 }

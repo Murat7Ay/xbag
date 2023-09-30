@@ -8,8 +8,8 @@ namespace XDataAccess;
 public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Entity<TEntity>
 {
     private readonly IDatabase _database;
-    private readonly RedisCollection<TEntity> _collection;
-    private readonly RedisCollection<EntityHistory> _historyCollection;
+    private readonly IRedisCollection<TEntity> _collection;
+    private readonly IRedisCollection<EntityHistory> _historyCollection;
     private readonly IAuthUser _user;
     private readonly IClock _clock;
     private readonly IFilterCondition _filterCondition;
@@ -33,8 +33,8 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         _user = user;
         _clock = clock;
         _filterCondition = filterCondition;
-        _collection = (RedisCollection<TEntity>)provider.RedisCollection<TEntity>();
-        _historyCollection = (RedisCollection<EntityHistory>)provider.RedisCollection<EntityHistory>();
+        _collection = provider.RedisCollection<TEntity>();
+        _historyCollection = provider.RedisCollection<EntityHistory>();
         _database = database;
     }
 
@@ -198,18 +198,17 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 
     public async Task<TEntity?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        var filteredQuery = ApplyFiltering(_collection);
-        return await filteredQuery.FindByIdAsync(id);
+        return await _collection.FindByIdAsync(id);
     }
 
-    public async Task<IList<EntityHistory>> GetHistory(string id, CancellationToken cancellationToken = default)
+    public async Task<IList<EntityHistory>> GetHistoryAsync(string id, CancellationToken cancellationToken = default)
     {
         return await _historyCollection.Where(x => x.EntityId == id).ToListAsync();
     }
 
-    private async Task<string> SaveHistory(IList<EntityChange> historyChanges)
+    private async Task SaveHistory(IList<EntityChange> historyChanges)
     {
         var history = new EntityHistory();
-        return await _historyCollection.InsertAsync(history);
+        await _historyCollection.InsertAsync(history);
     }
 }

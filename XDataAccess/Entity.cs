@@ -24,13 +24,13 @@ internal interface IEntity<in TEntity>
 
 public abstract  class Entity<TEntity> : IEntity<TEntity>
 {
-    [RedisIdField] 
+    [RedisIdField, Indexed] 
     public string? Id { get; set; }
-    [Searchable]
+    [Indexed]
     public string? XId { get; set; }
-    [Searchable]
+    [Indexed]
     public bool IsDeleted { get; set; }
-    [Searchable]
+    [Indexed]
     public bool IsActive { get; set; }
     [Searchable]
     public string? TraceId { get; set; }
