@@ -3,7 +3,7 @@
 namespace XDataAccess;
 
 public interface IReadOnlyBasicRepository<TEntity> : IRepository
-    where TEntity : IEntity<TEntity>
+    where TEntity : Entity<TEntity>
 {
     public Task<IList<TEntity>> GetListAsync(CancellationToken cancellationToken = default);
 

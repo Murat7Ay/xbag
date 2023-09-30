@@ -23,8 +23,8 @@ public static class SomeExtensions
         return lambda;
     }
 
-    public static IRedisCollection<T> WhereIf<T>(this IRedisCollection<T> query, bool condition,
-        Expression<Func<T, bool>> predicate) where T : IEntity<T>
+    public static IRedisCollection<TEntity> WhereIf<TEntity>(this IRedisCollection<TEntity> query, bool condition,
+        Expression<Func<TEntity, bool>> predicate) where TEntity : Entity<TEntity>
     {
         Check.NotNull(query, nameof(query));
 
@@ -33,7 +33,7 @@ public static class SomeExtensions
             : query;
     }
 
-    public static IRedisCollection<T> OrderBySorting<T>(this IRedisCollection<T> query, string sorting) where T : IEntity<T>
+    public static IRedisCollection<TEntity> OrderBySorting<TEntity>(this IRedisCollection<TEntity> query, string sorting) where TEntity : Entity<TEntity>
     {
         var sortingItems = sorting.Split(',').Select(item => item.Trim());
 
@@ -55,7 +55,7 @@ public static class SomeExtensions
                 continue;
             }
 
-            var expression = CreateExpression<T, string>(propertyName);
+            var expression = CreateExpression<TEntity, string>(propertyName);
 
             if (sortDirection == SortDirection.Asc)
             {

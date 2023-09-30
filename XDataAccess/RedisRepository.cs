@@ -5,7 +5,7 @@ using StackExchange.Redis;
 
 namespace XDataAccess;
 
-public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : IEntity<TEntity>
+public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Entity<TEntity>
 {
     private readonly IDatabase _database;
     private readonly RedisCollection<TEntity> _collection;
@@ -52,8 +52,8 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : IEn
     public async Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
         CancellationToken cancellationToken = default)
     {
-        var filteredQuery = ApplyFiltering(_collection);
-        return await filteredQuery
+        // var filteredQuery = ApplyFiltering(_collection);
+        return await _collection
             .Where(predicate)
             .ToListAsync();
     }

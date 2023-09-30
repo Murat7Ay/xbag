@@ -1,4 +1,5 @@
 using Redis.OM;
+using Redis.OM.Contracts;
 using Redis.OM.Modeling;
 using StackExchange.Redis;
 using XDataAccess;
@@ -15,55 +16,30 @@ app.MapGet("/", async () =>
     {
         EndPoints = { "localhost:6379" }
     };
-    var rep = new RedisRepository<Test1Entity>(conf, new AuthUser(), new Clock(), new FilterCondition());
-    var t = new Test1Entity();
-    t.Prop1 = "murat";
-    await rep.InsertAsync(t, default);
-    return await rep.GetListAsync(default);
+    var rep = new RedisRepository<EntityExample>(conf, new AuthUser(), new Clock(), new FilterCondition());
+
+    return await rep.GetListAsync(entity => entity.Prop1 == "1cdd129c-0e08-4024-ab19-1a20a9439e83" && entity.IsDeleted == false);
 });
-app.MapPost("/test", async (Test1Entity entity, CancellationToken cancellationToken) =>
+app.MapPost("/test", async (EntityExample entity, CancellationToken cancellationToken) =>
 {
     var conf = new ConfigurationOptions
     {
         EndPoints = { "localhost:6379" }
     };
-    var rep = new RedisRepository<Test1Entity>(conf, new AuthUser(), new Clock(), new FilterCondition());
+    var rep = new RedisRepository<EntityExample>(conf, new AuthUser(), new Clock(), new FilterCondition());
 
-    return await rep.InsertAsync(entity, cancellationToken);
+    return await rep.GetListAsync(test1Entity => test1Entity.XId == "2309301");
 });
 
 app.Run();
 
-[Document(StorageType = StorageType.Json, Prefixes = new[] { "test11" })]
-public class Test1Entity : IEntity<Test1Entity>
+[Document(StorageType = StorageType.Json, Prefixes = new[] { "EntityExample" })]
+public class EntityExample : Entity<EntityExample>
 {
+    [Searchable]
     public string? Prop1 { get; set; }
 
-    [RedisIdField] [Indexed]
-    public string? Id { get; set; }
-    public string? XId { get; set; }
-    [Indexed]
-    public bool IsDeleted { get; set; }
-    [Indexed]
-    public bool IsActive { get; set; }
-    [Indexed]
-    public string? TraceId { get; set; }
-    public string? DeletedBy { get; set; }
-    public DateTime? DeleteDate { get; set; }
-    public DateTime? ModifyDate { get; set; }
-    public string? ModifiedBy { get; set; }
-    public DateTime CreateDate { get; set; }
-    public string? CreatedBy { get; set; }
-    public int EntityVersion { get; set; }
-    public string? Ip { get; set; }
-    public string? Host { get; set; }
-
-    public object?[] GetKeys()
-    {
-        return new object?[] { Id };
-    }
-
-    public IList<EntityChange> GetChanges(Test1Entity compare)
+    public override IList<EntityChange> GetChanges(EntityExample compare)
     {
         return new List<EntityChange>()
         {
@@ -74,11 +50,6 @@ public class Test1Entity : IEntity<Test1Entity>
                 OldValue = compare?.Prop1
             }
         };
-    }
-
-    public override string ToString()
-    {
-        return $"[ENTITY: {GetType().Name}] Id = {Id}";
     }
 }
 
@@ -94,7 +65,14 @@ public class IndexCreationService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _provider.Connection.CreateIndexAsync(typeof(Test1Entity));
+        var entityTypes = System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
+            .Where(mytype => mytype.IsClass && mytype.GetInterfaces().Contains(typeof(Entity<>)));
+        IRedisConnection connection = _provider.Connection;
+        foreach (Type entity in entityTypes)
+        {
+            await connection.CreateIndexAsync(entity);
+        }
+        await _provider.Connection.CreateIndexAsync(typeof(EntityExample));
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
