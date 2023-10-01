@@ -1,11 +1,10 @@
 ﻿using System.Collections;
 using System.Globalization;
-using System.Linq.Dynamic;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 using Redis.OM;
 using Redis.OM.Searching;
-using DynamicExpression = System.Linq.Dynamic.DynamicExpression;
 
 namespace XDataAccess;
 
@@ -34,38 +33,23 @@ public static class SomeExtensions
     }
 
     public static IRedisCollection<TEntity> OrderBySorting<TEntity>(this IRedisCollection<TEntity> query,
-        string sorting) where TEntity : Entity<TEntity>
+        List<Sort>? sort) where TEntity : Entity<TEntity>
     {
-        var sortingItems = sorting.Split(',').Select(item => item.Trim());
-
-        foreach (var sortingItem in sortingItems)
+        if (sort == null) return query;
+        foreach (var sortingItem in sort)
         {
-            var parts = sortingItem.Split(' ');
-            if (parts.Length != 2)
+            if (!Enum.TryParse(sortingItem.Dir, true, out SortDirection sortDirection))
             {
-                // Handle invalid input if needed
                 continue;
             }
 
-            var propertyName = parts[0];
-            var sortOrder = parts[1].ToUpper(); // Convert to uppercase for case-insensitive parsing
-
-            if (!Enum.TryParse(sortOrder, true, out SortDirection sortDirection))
+            var expression = CreateExpression<TEntity, string>(sortingItem.Field);
+            query = sortDirection switch
             {
-                // Handle invalid sorting direction if needed
-                continue;
-            }
-
-            var expression = CreateExpression<TEntity, string>(propertyName);
-
-            if (sortDirection == SortDirection.Asc)
-            {
-                query = query.OrderBy(expression);
-            }
-            else if (sortDirection == SortDirection.Desc)
-            {
-                query = query.OrderByDescending(expression);
-            }
+                SortDirection.Asc => query.OrderBy(expression),
+                SortDirection.Desc => query.OrderByDescending(expression),
+                _ => query
+            };
         }
 
         return query;
@@ -74,19 +58,9 @@ public static class SomeExtensions
 
 public static class QueryableExtensions
 {
-    /// <summary>
-    /// Applies data processing (paging, sorting, filtering and aggregates) over IQueryable using Dynamic Linq.
-    /// </summary>
-    /// <typeparam name="T">The type of the IQueryable.</typeparam>
-    /// <param name="queryable">The IQueryable which should be processed.</param>
-    /// <param name="take">Specifies how many items to take. Configurable via the pageSize setting of the Kendo DataSource.</param>
-    /// <param name="skip">Specifies how many items to skip.</param>
-    /// <param name="sort">Specifies the current sort order.</param>
-    /// <param name="filter">Specifies the current filter.</param>
-    /// <param name="aggregates">Specifies the current aggregates.</param>
-    /// <returns>A DataSourceResult object populated from the processed IQueryable.</returns>
-    public static DataSourceResult ToDataSourceResult<T>(this IQueryable<T> queryable, int take, int skip,
-        IEnumerable<Sort> sort, Filter? filter, IEnumerable<Aggregator> aggregates)
+    public static DataSourceResult ToDataSourceResult<TEntity>(this IRedisCollection<TEntity> queryable, int take,
+        int skip,
+        List<Sort>? sort, Filter? filter, IEnumerable<Aggregator>? aggregates) where TEntity : Entity<TEntity>
     {
         // Filter the data first
         queryable = Filter(queryable, filter);
@@ -114,124 +88,96 @@ public static class QueryableExtensions
         };
     }
 
-    /// <summary>
-    /// Applies data processing (paging, sorting and filtering) over IQueryable using Dynamic Linq.
-    /// </summary>
-    /// <typeparam name="T">The type of the IQueryable.</typeparam>
-    /// <param name="queryable">The IQueryable which should be processed.</param>
-    /// <param name="take">Specifies how many items to take. Configurable via the pageSize setting of the Kendo DataSource.</param>
-    /// <param name="skip">Specifies how many items to skip.</param>
-    /// <param name="sort">Specifies the current sort order.</param>
-    /// <param name="filter">Specifies the current filter.</param>
-    /// <returns>A DataSourceResult object populated from the processed IQueryable.</returns>
-    public static DataSourceResult ToDataSourceResult<T>(this IQueryable<T> queryable, int take, int skip,
-        IEnumerable<Sort> sort, Filter? filter)
+    public static DataSourceResult ToDataSourceResult<TEntity>(this IRedisCollection<TEntity> queryable, int take,
+        int skip,
+        List<Sort>? sort, Filter? filter) where TEntity : Entity<TEntity>
     {
         return queryable.ToDataSourceResult(take, skip, sort, filter, null);
     }
 
-    /// <summary>
-    ///  Applies data processing (paging, sorting and filtering) over IQueryable using Dynamic Linq.
-    /// </summary>
-    /// <typeparam name="T">The type of the IQueryable.</typeparam>
-    /// <param name="queryable">The IQueryable which should be processed.</param>
-    /// <param name="request">The DataSourceRequest object containing take, skip, order, and filter data.</param>
-    /// <returns>A DataSourceResult object populated from the processed IQueryable.</returns>
-    public static DataSourceResult ToDataSourceResult<T>(this IQueryable<T> queryable, DataSourceRequest request)
+    public static DataSourceResult ToDataSourceResult<TEntity>(this IRedisCollection<TEntity> queryable,
+        DataSourceRequest request) where TEntity : Entity<TEntity>
     {
         return queryable.ToDataSourceResult(request.Take, request.Skip, request.Sort, request.Filter, null);
     }
 
-    private static IQueryable<T> Filter<T>(IQueryable<T> queryable, Filter? filter)
+    private static IRedisCollection<TEntity> Filter<TEntity>(IRedisCollection<TEntity> queryable, Filter? filter)
+        where TEntity : Entity<TEntity>
     {
         if (filter is not { Logic: { } }) return queryable;
-        
-        // Collect a flat list of all filters
-        var filters = filter.All();
-
-        // Get all filter values as array (needed by the Where method of Dynamic Linq)
-        var values = filters.Select(f => f.Value).ToArray();
-
-        // Create a predicate expression e.g. Field1 = @0 And Field2 > @1
-        string predicate = filter.ToExpression(filters);
-
-        // Use the Where method of Dynamic Linq to filter the data
-        queryable = queryable.Where(predicate, values);
-
-        return queryable;
+        return queryable.Where(filter.ToExpression<TEntity>());
     }
 
-    private static object Aggregate<T>(IQueryable<T> queryable, IEnumerable<Aggregator> aggregates)
+    private static object Aggregate<TEntity>(IRedisCollection<TEntity> queryable, IEnumerable<Aggregator>? aggregates)
     {
-        if (aggregates != null && aggregates.Any())
-        {
-            var objProps = new Dictionary<DynamicProperty, object>();
-            var groups = aggregates.GroupBy(g => g.Field);
-            Type type = null;
-            foreach (var group in groups)
-            {
-                var fieldProps = new Dictionary<DynamicProperty, object>();
-                foreach (var aggregate in group)
-                {
-                    var prop = typeof(T).GetProperty(aggregate.Field);
-                    var param = Expression.Parameter(typeof(T), "s");
-                    var selector = aggregate.Aggregate == "count" &&
-                                   (Nullable.GetUnderlyingType(prop.PropertyType) != null)
-                        ? Expression.Lambda(
-                            Expression.NotEqual(Expression.MakeMemberAccess(param, prop),
-                                Expression.Constant(null, prop.PropertyType)), param)
-                        : Expression.Lambda(Expression.MakeMemberAccess(param, prop), param);
-                    var mi = aggregate.MethodInfo(typeof(T));
-                    if (mi == null)
-                        continue;
-
-                    var val = queryable.Provider.Execute(Expression.Call(null, mi,
-                        aggregate.Aggregate == "count" && (Nullable.GetUnderlyingType(prop.PropertyType) == null)
-                            ? new[] { queryable.Expression }
-                            : new[] { queryable.Expression, Expression.Quote(selector) }));
-
-                    fieldProps.Add(new DynamicProperty(aggregate.Aggregate, typeof(object)), val);
-                }
-
-                type = DynamicExpression.CreateClass(fieldProps.Keys);
-                var fieldObj = Activator.CreateInstance(type);
-                foreach (var p in fieldProps.Keys)
-                    type.GetProperty(p.Name).SetValue(fieldObj, fieldProps[p], null);
-                objProps.Add(new DynamicProperty(group.Key, fieldObj.GetType()), fieldObj);
-            }
-
-            type = DynamicExpression.CreateClass(objProps.Keys);
-
-            var obj = Activator.CreateInstance(type);
-
-            foreach (var p in objProps.Keys)
-            {
-                type.GetProperty(p.Name).SetValue(obj, objProps[p], null);
-            }
-
-            return obj;
-        }
-        else
-        {
-            return null;
-        }
+        return null;
+        // if (aggregates != null && aggregates.Any())
+        // {
+        //     var objProps = new Dictionary<DynamicProperty, object>();
+        //     var groups = aggregates.GroupBy(g => g.Field);
+        //     Type type = null;
+        //     foreach (var group in groups)
+        //     {
+        //         var fieldProps = new Dictionary<DynamicProperty, object>();
+        //         foreach (var aggregate in group)
+        //         {
+        //             var prop = typeof(TEntity).GetProperty(aggregate.Field);
+        //             var param = Expression.Parameter(typeof(TEntity), "s");
+        //             var selector = aggregate.Aggregate == "count" &&
+        //                            (Nullable.GetUnderlyingType(prop.PropertyType) != null)
+        //                 ? Expression.Lambda(
+        //                     Expression.NotEqual(Expression.MakeMemberAccess(param, prop),
+        //                         Expression.Constant(null, prop.PropertyType)), param)
+        //                 : Expression.Lambda(Expression.MakeMemberAccess(param, prop), param);
+        //             var mi = aggregate.MethodInfo(typeof(TEntity));
+        //             if (mi == null)
+        //                 continue;
+        //
+        //             var val = queryable.Provider.Execute(Expression.Call(null, mi,
+        //                 aggregate.Aggregate == "count" && (Nullable.GetUnderlyingType(prop.PropertyType) == null)
+        //                     ? new[] { queryable.Expression }
+        //                     : new[] { queryable.Expression, Expression.Quote(selector) }));
+        //
+        //             fieldProps.Add(new DynamicProperty(aggregate.Aggregate, typeof(object)), val);
+        //         }
+        //
+        //         type = DynamicExpression.CreateClass(fieldProps.Keys);
+        //         var fieldObj = Activator.CreateInstance(type);
+        //         foreach (var p in fieldProps.Keys)
+        //             type.GetProperty(p.Name).SetValue(fieldObj, fieldProps[p], null);
+        //         objProps.Add(new DynamicProperty(group.Key, fieldObj.GetType()), fieldObj);
+        //     }
+        //
+        //     type = DynamicExpression.CreateClass(objProps.Keys);
+        //
+        //     var obj = Activator.CreateInstance(type);
+        //
+        //     foreach (var p in objProps.Keys)
+        //     {
+        //         type.GetProperty(p.Name).SetValue(obj, objProps[p], null);
+        //     }
+        //
+        //     return obj;
+        // }
+        // else
+        // {
+        //     return null;
+        // }
     }
 
-    private static IQueryable<T> Sort<T>(IQueryable<T> queryable, IEnumerable<Sort> sort)
+    private static IRedisCollection<TEntity> Sort<TEntity>(IRedisCollection<TEntity> queryable, List<Sort>? sort)
+        where TEntity : Entity<TEntity>
     {
         if (sort != null && sort.Any())
         {
-            // Create ordering expression e.g. Field1 asc, Field2 desc
-            var ordering = String.Join(",", sort.Select(s => s.ToExpression()));
-
-            // Use the OrderBy method of Dynamic Linq to sort the data
-            return queryable.OrderBy(ordering);
+            return queryable.OrderBySorting(sort);
         }
 
         return queryable;
     }
 
-    private static IQueryable<T> Page<T>(IQueryable<T> queryable, int take, int skip)
+    private static IRedisCollection<TEntity> Page<TEntity>(IRedisCollection<TEntity> queryable, int take, int skip)
+        where TEntity : Entity<TEntity>
     {
         return queryable.Skip(skip).Take(take);
     }
@@ -301,29 +247,178 @@ public class Filter
         }
     }
 
-    public string ToExpression(IList<Filter> filters)
+    public Expression<Func<T, bool>> ToExpression<T>()
     {
+        var parameter = Expression.Parameter(typeof(T), "item");
+
+        // Build the initial expression based on the first filter
+        var expression = BuildExpression<T>(parameter);
+
+        // Apply logical operators for additional filters
         if (Filters != null && Filters.Any())
         {
-            return "(" + String.Join(" " + Logic + " ",
-                Filters.Select(filter => filter.ToExpression(filters)).ToArray()) + ")";
+            foreach (var filter in Filters)
+            {
+                Expression<Func<T, bool>> filterExpression = filter.BuildExpression<T>(parameter);
+
+                if (filter.Logic == "and")
+                {
+                    expression =
+                        Expression.Lambda<Func<T, bool>>(Expression.AndAlso(expression.Body, filterExpression.Body),
+                            parameter);
+                }
+                else if (filter.Logic == "or")
+                {
+                    expression =
+                        Expression.Lambda<Func<T, bool>>(Expression.OrElse(expression.Body, filterExpression.Body),
+                            parameter);
+                }
+            }
         }
 
-        int index = filters.IndexOf(this);
+        return expression;
+    }
 
-        string comparison = operators[Operator];
+    private Expression<Func<T, bool>> BuildExpression<T>(ParameterExpression parameter)
+    {
+        Expression propertyAccess = Expression.Property(parameter, Field);
+        Expression constant;
 
-        if (Operator == "doesnotcontain")
+        // Convert Jsonelement to constant value
+        if (Value is JsonElement jsonElement)
         {
-            return $"!{Field}.{comparison}(@{index})";
+            constant = ConvertJsonElementToConstant(jsonElement, propertyAccess.Type);
         }
-
-        if (comparison == "StartsWith" || comparison == "EndsWith" || comparison == "Contains")
+        else
         {
-            return $"{Field}.{comparison}(@{index})";
+            constant = Expression.Constant(Value);
         }
 
-        return $"{Field} {comparison} @{index}";
+        Expression operatorExpression = Expression.Equal(propertyAccess, constant);
+
+        if (operators.TryGetValue(Operator, out string mappedOperator))
+        {
+            switch (mappedOperator)
+            {
+                case "=":
+                    operatorExpression = Expression.Equal(propertyAccess, constant);
+                    break;
+                case "!=":
+                    operatorExpression = Expression.NotEqual(propertyAccess, constant);
+                    break;
+                case "<":
+                    operatorExpression = Expression.LessThan(propertyAccess, constant);
+                    break;
+                case "<=":
+                    operatorExpression = Expression.LessThanOrEqual(propertyAccess, constant);
+                    break;
+                case ">":
+                    operatorExpression = Expression.GreaterThan(propertyAccess, constant);
+                    break;
+                case ">=":
+                    operatorExpression = Expression.GreaterThanOrEqual(propertyAccess, constant);
+                    break;
+                case "StartsWith":
+                    operatorExpression = Expression.Call(propertyAccess,
+                        typeof(string).GetMethod("StartsWith", new[] { typeof(string) }), constant);
+                    break;
+                case "EndsWith":
+                    operatorExpression = Expression.Call(propertyAccess,
+                        typeof(string).GetMethod("EndsWith", new[] { typeof(string) }), constant);
+                    break;
+                case "Contains":
+                    operatorExpression = Expression.Call(propertyAccess,
+                        typeof(string).GetMethod("Contains", new[] { typeof(string) }), constant);
+                    break;
+                case "DoesNotContain":
+                    if (propertyAccess.Type == typeof(string))
+                    {
+                        // Use the String.Contains method and negate the result
+                        operatorExpression = Expression.Not(
+                            Expression.Call(propertyAccess,
+                                typeof(string).GetMethod("Contains", new[] { typeof(string) }), constant)
+                        );
+                    }
+
+                    break;
+                case "Between":
+                    if (Value is List<object> rangeValues && rangeValues.Count == 2)
+                    {
+                        Expression lowerBound = Expression.Constant(rangeValues[0]);
+                        Expression upperBound = Expression.Constant(rangeValues[1]);
+
+                        // Create a binary expression to check if the value is between the lower and upper bounds
+                        operatorExpression = Expression.AndAlso(
+                            Expression.GreaterThanOrEqual(propertyAccess, lowerBound),
+                            Expression.LessThanOrEqual(propertyAccess, upperBound)
+                        );
+                    }
+
+                    break;
+            }
+        }
+
+        return Expression.Lambda<Func<T, bool>>(operatorExpression, parameter);
+    }
+
+    private Expression ConvertJsonElementToConstant(JsonElement jsonElement, Type targetType)
+    {
+        // Handle different types of JsonElement as needed
+        if (jsonElement.ValueKind == JsonValueKind.String)
+        {
+            if (targetType == typeof(string))
+            {
+                return Expression.Constant(jsonElement.GetString());
+            }
+            else if (targetType == typeof(int))
+            {
+                if (int.TryParse(jsonElement.GetString(), out int intValue))
+                {
+                    return Expression.Constant(intValue);
+                }
+            }
+            else if (targetType == typeof(long))
+            {
+                if (long.TryParse(jsonElement.GetString(), out long longValue))
+                {
+                    return Expression.Constant(longValue);
+                }
+            }
+            // Handle other type conversions as needed
+        }
+        else if (jsonElement.ValueKind == JsonValueKind.Number)
+        {
+            if (targetType == typeof(int))
+            {
+                if (jsonElement.TryGetInt32(out int intValue))
+                {
+                    return Expression.Constant(intValue);
+                }
+            }
+            else if (targetType == typeof(long))
+            {
+                if (jsonElement.TryGetInt64(out long longValue))
+                {
+                    return Expression.Constant(longValue);
+                }
+            }
+            else if (targetType == typeof(double))
+            {
+                if (jsonElement.TryGetDouble(out double doubleValue))
+                {
+                    return Expression.Constant(doubleValue);
+                }
+            }
+            else if (targetType == typeof(string))
+            {
+                return Expression.Constant(jsonElement.ToString());
+            }
+            // Handle other type conversions as needed
+        }
+        // Handle other JsonValueKind cases as needed
+
+        // If the conversion fails, you can return a default constant or throw an exception.
+        throw new NotSupportedException($"Unsupported JsonElement value kind: {jsonElement.ValueKind}");
     }
 }
 
@@ -436,6 +531,6 @@ public class DataSourceRequest
 {
     public int Take { get; set; }
     public int Skip { get; set; }
-    public IEnumerable<Sort> Sort { get; set; }
+    public List<Sort>? Sort { get; set; }
     public Filter? Filter { get; set; }
 }

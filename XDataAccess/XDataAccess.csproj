@@ -8,7 +8,6 @@
 
     <ItemGroup>
       <PackageReference Include="Redis.OM" Version="0.5.2" />
-      <PackageReference Include="System.Linq.Dynamic" Version="1.0.8" />
     </ItemGroup>
 
 </Project>

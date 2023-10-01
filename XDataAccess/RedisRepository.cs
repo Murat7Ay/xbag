@@ -43,18 +43,17 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         bool isDeletedFilter = _filterCondition.GetFilter("IsDeleted");
         bool isActiveFilter = _filterCondition.GetFilter("IsActive");
         return query.Where(x =>
-            x.IsDeleted == isDeletedFilter&&
+            x.IsDeleted == isDeletedFilter &&
             x.IsActive == isActiveFilter);
     }
 
-    public  Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
+    public Task<IList<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate,
         CancellationToken cancellationToken = default)
     {
         var filteredQuery = ApplyFiltering(_collection);
         return filteredQuery
             .Where(predicate)
             .ToListAsync();
-
     }
 
     public async Task<IList<TEntity>> GetListAsync(CancellationToken cancellationToken = default)
@@ -76,15 +75,11 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         return await filteredQuery.CountAsync(predicate);
     }
 
-    public async Task<IList<TEntity>> GetPagedListAsync(int skipCount, int maxResultCount, string sorting,
+    public DataSourceResult GetPagedListAsync(DataSourceRequest dataSourceRequest,
         CancellationToken cancellationToken = default)
     {
         var filteredQuery = ApplyFiltering(_collection);
-        var orderedQuery = filteredQuery.OrderBySorting(sorting);
-        return await orderedQuery
-            .Skip(skipCount)
-            .Take(maxResultCount)
-            .ToListAsync();
+        return filteredQuery.ToDataSourceResult(dataSourceRequest);
     }
 
     public async Task<string> InsertAsync(TEntity entity, CancellationToken cancellationToken = default)

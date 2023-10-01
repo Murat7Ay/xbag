@@ -11,9 +11,6 @@ public interface IReadOnlyBasicRepository<TEntity> : IRepository
     
     public Task<int> GetCountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 
-    public Task<IList<TEntity>> GetPagedListAsync(
-        int skipCount,
-        int maxResultCount,
-        string sorting,
+    public DataSourceResult GetPagedListAsync(DataSourceRequest dataSourceRequest,
         CancellationToken cancellationToken = default);
 }
