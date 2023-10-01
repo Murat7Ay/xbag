@@ -23,7 +23,7 @@ public static class RegisterEntities
         app.MapGet("/EntityExample", (IRepository<EntityExample> repository) => repository.GetListAsync());
         app.MapGet("/EntityExample/{id}/history", (IRepository<EntityExample> repository, string id) => repository.GetHistoryAsync(id));
         app.MapGet("/EntityExample/{id}", (IRepository<EntityExample> repository, string id) => repository.FindByIdAsync(id));
-        app.MapGet("/EntityExample/{offset}/{limit}", (IRepository<EntityExample> repository, int offset, int limit) => repository.GetPagedListAsync(offset, limit,""));
+        app.MapGet("/EntityExample/{offset}/{limit}", (IRepository<EntityExample> repository, int offset, int limit, string  sorting) => repository.GetPagedListAsync(offset, limit,sorting));
 
     }
 }
