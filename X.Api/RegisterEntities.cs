@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Redis.OM;
+using StackExchange.Redis;
 using XDataAccess;
 
 public static class RegisterEntities
@@ -24,6 +26,14 @@ public static class RegisterEntities
         app.MapGet("/EntityExample/{id}/history", (IRepository<EntityExample> repository, string id) => repository.GetHistoryAsync(id));
         app.MapGet("/EntityExample/{id}", (IRepository<EntityExample> repository, string id) => repository.FindByIdAsync(id));
         app.MapPost("/EntityExample/Paged", (IRepository<EntityExample> repository, [FromBody]DataSourceRequest request) => repository.GetPagedListAsync(request));
+        
+        app.MapPost("/EntityExample/Custom",
+            (IRepository<EntityExample> repository, [FromBody] DataSourceRequest request) =>
+            {
+                var col = repository.GetCollection;
+                var res = col.Where(x => x.IsActive && !x.IsDeleted && (x.Prop1 == "test1" || x.Prop1 != "test1"));
+                return res.ToList();
+            });
 
     }
 }

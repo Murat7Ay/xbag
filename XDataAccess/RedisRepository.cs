@@ -206,4 +206,6 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         var history = new EntityHistory();
         await _historyCollection.InsertAsync(history);
     }
+
+    public IRedisCollection<TEntity> GetCollection => _collection;
 }

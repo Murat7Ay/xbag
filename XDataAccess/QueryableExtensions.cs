@@ -12,20 +12,21 @@ public static class QueryableExtensions
         // Filter the data first
         queryable = Filter(queryable, filter);
 
-        // Calculate the total number of records (needed for paging)
-        var total = queryable.Count();
-
-        // Calculate the aggregates
-        var aggregate = Aggregate(queryable, aggregates);
-
         // Sort the data
         queryable = Sort(queryable, sort);
+        
+        // Calculate the aggregates
+        var aggregate = Aggregate(queryable, aggregates);
+        
+        //TODO: aggregate problem
+        // Calculate the total number of records (needed for paging)
+        var total = 0; //queryable.Count();
 
         // Finally page the data
-        if (take > 0)
-        {
-            queryable = Page(queryable, take, skip);
-        }
+        // if (take > 0)
+        // {
+        //     queryable = Page(queryable, take, skip);
+        // }
 
         return new DataSourceResult
         {

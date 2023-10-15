@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Redis.OM.Searching;
 
 namespace XDataAccess;
 
@@ -14,6 +15,8 @@ public interface IRepository<TEntity> : IReadOnlyRepository<TEntity>, IBasicRepo
         string id,
         CancellationToken cancellationToken = default
     );
+
+    public IRedisCollection<TEntity> GetCollection { get; }
 }
 
 public interface IRepository

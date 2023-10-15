@@ -89,7 +89,12 @@ public class Filter
 
     private Expression<Func<T, bool>> BuildExpression<T>(ParameterExpression parameter)
     {
-        Expression propertyAccess = Expression.Property(parameter, Field);
+        var propertyNames = Field.Split('.');
+        Expression propertyAccess = parameter;
+        foreach (var propertyName in propertyNames)
+        {
+            propertyAccess = Expression.Property(propertyAccess, propertyName);
+        }
         Expression constant;
 
         // Convert Jsonelement to constant value

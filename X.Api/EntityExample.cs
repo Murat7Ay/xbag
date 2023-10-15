@@ -6,6 +6,10 @@ public class EntityExample : Entity<EntityExample>
 {
     [Searchable]
     public string? Prop1 { get; set; }
+    [Indexed]
+    public List<string> Prop3 { get; set; }
+    [Indexed]
+    public ExampleInsideClass PropExample { get; set; }
 
     public override IList<EntityChange> GetChanges(EntityExample compare)
     {
@@ -19,4 +23,11 @@ public class EntityExample : Entity<EntityExample>
             }
         };
     }
+}
+
+
+public class ExampleInsideClass
+{
+    [Indexed]
+    public string? Prop2 { get; set; }
 }
