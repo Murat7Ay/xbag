@@ -104,8 +104,7 @@ public static class QueryableExtensions
     private static IRedisCollection<TEntity> Filter<TEntity>(IRedisCollection<TEntity> queryable, Filter? filter)
         where TEntity : Entity<TEntity>
     {
-        if (filter is not { Logic: { } }) return queryable;
-        return queryable.Where(filter.ToExpression<TEntity>());
+        return filter is null ? queryable : queryable.Where(filter.ToExpression<TEntity>());
     }
 
     private static object Aggregate<TEntity>(IRedisCollection<TEntity> queryable, IEnumerable<Aggregator>? aggregates)
