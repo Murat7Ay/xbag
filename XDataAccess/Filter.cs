@@ -234,3 +234,183 @@ public class Filter
         throw new NotSupportedException($"Unsupported JsonElement value kind: {jsonElement.ValueKind}");
     }
 }
+
+
+public class Filter<T>
+{
+    private ParameterExpression Parameter { get; } = Expression.Parameter(typeof(T), "x");
+
+    public Expression<Func<T, bool>> GenerateFilterExpression(FilterItem filter)
+    {
+        if (!filter.NestedFilters.Any()) return GenerateSimpleFilterExpression(filter);
+        
+        var nestedExpressions = filter.NestedFilters.Select(GenerateFilterExpression);
+        return filter.Logic.ToLower() switch
+        {
+            "and" => CombineExpressions(nestedExpressions, Expression.AndAlso),
+            "or" => CombineExpressions(nestedExpressions, Expression.OrElse),
+            _ => throw new ArgumentException("Invalid logic operator")
+        };
+    }
+    
+    private Expression<Func<T, bool>> CombineExpressions(IEnumerable<Expression<Func<T, bool>>> expressions, Func<Expression, Expression, Expression> combiner)
+    {
+        Expression? combinedExpression = null;
+        foreach (var expression in expressions)
+        {
+            combinedExpression = combinedExpression == null ? expression.Body : combiner(combinedExpression, expression.Body);
+        }
+        return Expression.Lambda<Func<T, bool>>(combinedExpression, Parameter);
+    }
+
+    private Expression<Func<T, bool>> GenerateSimpleFilterExpression(FilterItem filter)
+    {
+        var member = Expression.PropertyOrField(Parameter, filter.FieldName);
+        var constant = Expression.Constant(filter.Value);
+        return BuildComparisonExpression(member, filter.Operator, constant);
+    }
+
+    private Expression GetFilterExpression(FilterItem filter)
+    {
+        var member = GetNestedProperty(Parameter, filter.FieldName);
+        var constant = Expression.Constant(filter.Value);
+        return BuildComparisonExpression(member, filter.Operator, constant);
+    }
+
+    private Expression<Func<T, bool>> BuildComparisonExpression(Expression member, string op, ConstantExpression constant)
+    {
+        Expression operatorExpression;
+        switch (op.ToLower())
+        {
+            case "eq":
+                operatorExpression = Expression.Equal(member, constant);
+                break;
+            case "neq":
+                operatorExpression = Expression.NotEqual(member, constant);
+                break;
+            case "gt":
+                operatorExpression = Expression.GreaterThan(member, constant);
+                break;
+            case "lt":
+                operatorExpression = Expression.LessThan(member, constant);
+                break;
+            case "gte":
+                operatorExpression = Expression.GreaterThanOrEqual(member, constant);
+                break;
+            case "lte":
+                operatorExpression = Expression.LessThanOrEqual(member, constant);
+                break;
+            case "contains":
+                if (member.Type == typeof(string))
+                {
+                    operatorExpression = Expression.Call(member, "Contains", Type.EmptyTypes, constant);
+                    break;
+                }
+                else
+                {
+                    operatorExpression = Expression.Call(typeof(Enumerable), "Contains", new[] { member.Type }, member, constant);
+                    break;
+                }
+            case "doesnotcontain":
+                if (member.Type == typeof(string))
+                {
+                    operatorExpression = Expression.Not(Expression.Call(member, "Contains", Type.EmptyTypes, constant));
+                    break;
+                }
+                else
+                {
+                    operatorExpression = Expression.Not(Expression.Call(typeof(Enumerable), "Contains", new[] { member.Type }, member, constant));
+                    break;
+                }
+            case "startswith":
+                if (member.Type == typeof(string))
+                {
+                    operatorExpression = Expression.Call(member, "StartsWith", Type.EmptyTypes, constant);
+                    break;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid operator for the specified type");
+                }
+            case "endswith":
+                if (member.Type == typeof(string))
+                {
+                    operatorExpression = Expression.Call(member, "EndsWith", Type.EmptyTypes, constant);
+                    break;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid operator for the specified type");
+                }
+            case "between":
+                if (member.Type == typeof(DateTime))
+                {
+                    var constant2 = Expression.Constant((DateTime)constant.Value + TimeSpan.FromDays(1));
+                    operatorExpression = Expression.AndAlso(
+                        Expression.GreaterThanOrEqual(member, constant),
+                        Expression.LessThan(member, constant2));
+                    break;
+                }
+                else if (IsNumericType(member.Type))
+                {
+                    var constant2 = Expression.Constant(Convert.ChangeType(constant.Value, member.Type));
+                    operatorExpression = Expression.AndAlso(
+                        Expression.GreaterThanOrEqual(member, constant),
+                        Expression.LessThanOrEqual(member, constant2));
+                    break;
+                }
+                else
+                {
+                    throw new ArgumentException("Between operator is only supported for DateTime and numeric types.");
+                }
+            case "isnull":
+                operatorExpression = Expression.Equal(member, Expression.Constant(null, member.Type));
+                break;
+            case "isnotnull":
+                operatorExpression = Expression.NotEqual(member, Expression.Constant(null, member.Type));
+                break;
+            default:
+                throw new ArgumentException("Invalid operator");
+        }
+        
+        return Expression.Lambda<Func<T, bool>>(operatorExpression, Parameter);
+    }
+
+    private MemberExpression GetNestedProperty(Expression expression, string propertyName)
+    {
+        var properties = propertyName.Split('.');
+        Expression result = expression;
+
+        foreach (var prop in properties)
+        {
+            if (result.Type.IsGenericType && result.Type.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                var elementType = result.Type.GetGenericArguments()[0];
+                result = Expression.Property(result, "Any", GetNestedProperty(Expression.Parameter(elementType, "e"), prop));
+            }
+            else
+            {
+                result = Expression.Property(result, prop);
+            }
+        }
+
+        return (MemberExpression)result;
+    }
+
+    private bool IsNumericType(Type type)
+    {
+        return type == typeof(int) || type == typeof(double) || type == typeof(decimal) || type == typeof(float) ||
+               type == typeof(long) || type == typeof(short) || type == typeof(uint) || type == typeof(ushort) ||
+               type == typeof(ulong) || type == typeof(byte) || type == typeof(sbyte);
+    }
+}
+
+public class FilterItem
+{
+    public string Logic { get; set; } // Logic operator for combining nested filters, e.g., AND, OR
+    public List<FilterItem> NestedFilters { get; set; } // Nested filters
+    public string FieldName { get; set; }
+    public string Operator { get; set; }
+    public object Value { get; set; }
+}
+
