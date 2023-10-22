@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Authors>Murat Ay</Authors>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <Description>The custom code analyzer is designed to enforce a rule requiring that any method marked with the XMethodAttribute must have precisely one parameter, and that parameter must be of type IReadOnlyXBag. This analyzer will be integrated into the build process to ensure adherence to this guideline throughout the codebase.</Description>
+        <PackageVersion>1.0.2</PackageVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
+    </ItemGroup>
+
+</Project>
