@@ -6,7 +6,7 @@ namespace XInfrastructure;
 
 using System.Collections.Generic;
 
-public class XBag
+public class XBag : IReadOnlyXBag
 {
     private readonly ConcurrentDictionary<string, XValue> _data = new();
 
@@ -47,4 +47,13 @@ public class XBag
     {
         return _data.Remove(key, out _);
     }
+}
+
+
+public interface IReadOnlyXBag
+{
+    bool ContainsKey(string key);
+    XValue Get(string key);
+    XValue GetWithDefault(string key, XValue defaultValue);
+    ReadOnlyDictionary<string, XValue> GetReadOnlyDictionary();
 }
