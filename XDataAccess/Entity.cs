@@ -36,8 +36,8 @@ public abstract  class Entity<TEntity> : IEntity<TEntity>
     public string? TraceId { get; set; }
     public string? DeletedBy { get; set; }
     public DateTime? DeleteDate { get; set; }
-    public DateTime? ModifyDate { get; set; }
     public string? ModifiedBy { get; set; }
+    public DateTime? ModifyDate { get; set; }
     public DateTime CreateDate { get; set; }
     public string? CreatedBy { get; set; }
     public int EntityVersion { get; set; }

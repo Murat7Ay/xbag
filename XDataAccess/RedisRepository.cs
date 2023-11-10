@@ -1,5 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Linq.Expressions;
 using Redis.OM;
+using Redis.OM.Modeling;
 using Redis.OM.Searching;
 using StackExchange.Redis;
 
@@ -95,6 +98,7 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 
     private async Task InitializeEntityForInsertAsync(TEntity entity)
     {
+        entity.Id = null;
         entity.XId = await GetNextEntityXId();
         entity.CreateDate = _clock.Now;
         entity.CreatedBy = _user.Id;
@@ -102,6 +106,12 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         entity.Host = _user.Host;
         entity.TraceId = _user.TraceId;
         entity.IsActive = true;
+        entity.EntityVersion = 0;
+        entity.ModifiedBy = null;
+        entity.ModifyDate = null;
+        entity.DeletedBy = null;
+        entity.DeleteDate = null;
+        entity.IsDeleted = false;
     }
 
     public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
@@ -124,6 +134,9 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         entity.Ip = _user.Ip;
         entity.Host = _user.Host;
         entity.TraceId = _user.TraceId;
+        entity.IsDeleted = false;
+        entity.DeletedBy = null;
+        entity.DeleteDate = null;
     }
 
     private async Task<TEntity> CheckAndIncrementEntityVersion(TEntity entity)
@@ -201,11 +214,67 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
         return await _historyCollection.Where(x => x.EntityId == id).ToListAsync();
     }
 
+    public IList<Dictionary<string, string>> GetIndexInfo()
+    {
+        //TODO: check multiple prefixes and none prefix on attribute
+        string indexName = string.Join("",GetPrefixes()).ToLower(CultureInfo.InvariantCulture) + "-idx";
+        RedisResult infoResult = _database.Execute("FT.INFO", indexName);
+
+        if (infoResult.Type == ResultType.MultiBulk)
+        {
+            var infoPairs = (RedisResult[])infoResult;
+
+            for (int i = 0; i < infoPairs.Length; i += 2)
+            {
+                string key = (string)infoPairs[i];
+                RedisResult value = infoPairs[i + 1];
+
+                switch (key)
+                {
+                    case "attributes":
+                        return ParseIndexInfo(value);
+                }
+            }
+        }
+
+        return new List<Dictionary<string, string>>();
+    }
+
+    private IList<Dictionary<string, string>> ParseIndexInfo(RedisResult attributeResult)
+    {
+        if (attributeResult.Type != ResultType.MultiBulk)
+        {
+            return new List<Dictionary<string, string>>();
+        }
+
+        return ((RedisResult[])attributeResult)
+            .Select(value => ((RedisResult[])value)
+                .Where((_, index) => index % 2 == 0)
+                .ToDictionary(key => key.ToString(), key => ((RedisResult[])value)[Array.IndexOf(((RedisResult[])value), key) + 1].ToString())
+            )
+            .ToList();
+    }
+
     private async Task SaveHistory(IList<EntityChange> historyChanges)
     {
+        if (historyChanges.Count == 0)
+            return;
         var history = new EntityHistory();
         await _historyCollection.InsertAsync(history);
     }
 
     public IRedisCollection<TEntity> GetCollection => _collection;
+    
+    public string[] GetPrefixes()
+    {
+        Type entityType = typeof(TEntity);
+        DocumentAttribute? documentAttribute = (DocumentAttribute)Attribute.GetCustomAttribute(entityType, typeof(DocumentAttribute));
+
+        if (documentAttribute != null)
+        {
+            return documentAttribute.Prefixes;
+        }
+
+        return Array.Empty<string>();
+    }
 }

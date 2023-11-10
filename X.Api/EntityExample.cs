@@ -10,6 +10,10 @@ public class EntityExample : Entity<EntityExample>
     public List<string> Prop3 { get; set; }
     [Indexed]
     public ExampleInsideClass PropExample { get; set; }
+    
+    
+    [Indexed]
+    public int IntegerProperty { get; set; }
 
     public override IList<EntityChange> GetChanges(EntityExample compare)
     {

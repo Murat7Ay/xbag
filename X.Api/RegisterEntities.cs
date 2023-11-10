@@ -23,6 +23,7 @@ public static class RegisterEntities
         app.MapPost("/EntityExample", (IRepository<EntityExample> repository, EntityExample entity) => repository.UpdateAsync(entity));
         app.MapDelete("/EntityExample", (IRepository<EntityExample> repository, [FromBody]EntityExample entity) => repository.DeleteAsync(entity));
         app.MapGet("/EntityExample", (IRepository<EntityExample> repository) => repository.GetListAsync());
+        app.MapGet("/EntityExample/IndexInfo", (IRepository<EntityExample> repository) => repository.GetIndexInfo());
         app.MapGet("/EntityExample/{id}/history", (IRepository<EntityExample> repository, string id) => repository.GetHistoryAsync(id));
         app.MapGet("/EntityExample/{id}", (IRepository<EntityExample> repository, string id) => repository.FindByIdAsync(id));
         app.MapPost("/EntityExample/Paged", (IRepository<EntityExample> repository, [FromBody]DataSourceRequest request) => repository.GetPagedListAsync(request));
