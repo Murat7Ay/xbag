@@ -13,4 +13,8 @@
       <ProjectReference Include="..\XInfrastructure\XInfrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Methods.cs" />
+    </ItemGroup>
+
 </Project>
