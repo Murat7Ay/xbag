@@ -16,8 +16,6 @@ public class HyperLogLog : IHyperLogLog
         return await _database.HyperLogLogAddAsync(key, RedisValues(values), CommandFlags.FireAndForget);
     }
 
-    private static RedisValue[] RedisValues(string[] values) => values.Select(s => new RedisValue(s)).ToArray();
-
     public async Task<bool> AddAsync(string key, long ticks, params string[] values)
     {
         var result = await AddAsync(key, values);
@@ -35,8 +33,6 @@ public class HyperLogLog : IHyperLogLog
         return await _database.HyperLogLogLengthAsync(RedisKeys(key));
     }
 
-    private static RedisKey[] RedisKeys(string[] key) => key.Select(s => new RedisKey(s)).ToArray();
-
     public async Task MergeAsync(string destinationKey, params string[] sourceKeys)
     {
         await _database.HyperLogLogMergeAsync(destinationKey, RedisKeys(sourceKeys));
@@ -46,4 +42,7 @@ public class HyperLogLog : IHyperLogLog
     {
         return await _database.KeyExpireAsync(key, new TimeSpan(ticks));
     }
+
+    private static RedisValue[] RedisValues(string[] values) => values.Select(s => new RedisValue(s)).ToArray();
+    private static RedisKey[] RedisKeys(string[] key) => key.Select(s => new RedisKey(s)).ToArray();
 }
