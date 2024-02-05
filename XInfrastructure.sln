@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XCodeAnalysis", "XCodeAnaly
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XCodeAnalysis.Test", "XCodeAnalysis.Test\XCodeAnalysis.Test.csproj", "{94318BC9-97DA-4218-96CF-D22D627D2228}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XProbabilisticToolkit", "XProbabilisticToolkit\XProbabilisticToolkit.csproj", "{FD664B77-74F8-4160-A3BA-D8EE515C198A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,9 @@ Global
 		{94318BC9-97DA-4218-96CF-D22D627D2228}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94318BC9-97DA-4218-96CF-D22D627D2228}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94318BC9-97DA-4218-96CF-D22D627D2228}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
