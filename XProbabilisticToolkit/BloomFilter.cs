@@ -18,7 +18,19 @@ public class BloomFilter : IBloomFilter
 
     public IDictionary<string, int> AddItems(string key, ISet<string> items)
     {
-        throw new NotImplementedException();
+        Dictionary<string, int> values = new Dictionary<string, int>();
+        List<object> arguments = new List<object>() { key };
+        arguments.AddRange(items);
+        RedisResult result = _database.Execute("BF.MADD", arguments);
+        if (result.Type != ResultType.MultiBulk) return values;
+        var resultSet = (RedisResult[])result;
+        arguments.RemoveAt(0);
+        for (int i = 0; i < arguments.Count; i++)
+        {
+            values.Add((string)arguments[i], (int)resultSet[i]);
+        }
+
+        return values;
     }
 
     public int Cardinality(string key)
@@ -102,7 +114,7 @@ public class BloomFilter : IBloomFilter
         }
 
         var result = _database.Execute("BF.INSERT", arguments);
-
-        return null;
+        //TODO: extract items result from command 
+        return new Dictionary<string, int>();
     }
 }
