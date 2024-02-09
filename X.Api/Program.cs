@@ -5,6 +5,7 @@ using Redis.OM;
 using StackExchange.Redis;
 using X.Api;
 using XDataAccess;
+using XProbabilisticToolkit;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,17 +71,17 @@ builder.Services.AddSingleton<IDatabase>(cfg =>
 builder.Services.AddTransient<IClock>(_ => new Clock());
 builder.Services.AddTransient<IFilterCondition>(_ => new FilterCondition());
 builder.Services.AddTransient<IAuthUser>(_ => new AuthUser());
-builder.Services.AddTransient<IClock>(_ => new Clock());
 builder.Services.AddHostedService<CreateIndexHostedService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpContextAccessor();
-RegisterEntities.AddRepositories(builder);
+RegisterInfrastructures.AddRepositories(builder);
+RegisterInfrastructures.AddProbabilistic(builder);
 var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
-RegisterEntities.AddApis(app);
+RegisterInfrastructures.AddApis(app);
 
 app.MapPut("/user", SaveUser());
 app.MapPost("/login", LoginUser());

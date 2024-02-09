@@ -18,6 +18,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDataAccess", "XDataAccess\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "X.Api", "X.Api\X.Api.csproj", "{86E05305-5ABA-44B8-B81F-AD06765CB7BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XCodeAnalysis", "XCodeAnalysis\XCodeAnalysis.csproj", "{51A1FB43-DF9D-4F5A-B360-D4EB148C82D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XCodeAnalysis.Test", "XCodeAnalysis.Test\XCodeAnalysis.Test.csproj", "{94318BC9-97DA-4218-96CF-D22D627D2228}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XProbabilisticToolkit", "XProbabilisticToolkit\XProbabilisticToolkit.csproj", "{FD664B77-74F8-4160-A3BA-D8EE515C198A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +66,17 @@ Global
 		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86E05305-5ABA-44B8-B81F-AD06765CB7BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51A1FB43-DF9D-4F5A-B360-D4EB148C82D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51A1FB43-DF9D-4F5A-B360-D4EB148C82D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51A1FB43-DF9D-4F5A-B360-D4EB148C82D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51A1FB43-DF9D-4F5A-B360-D4EB148C82D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94318BC9-97DA-4218-96CF-D22D627D2228}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94318BC9-97DA-4218-96CF-D22D627D2228}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94318BC9-97DA-4218-96CF-D22D627D2228}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94318BC9-97DA-4218-96CF-D22D627D2228}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD664B77-74F8-4160-A3BA-D8EE515C198A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,8 +1,10 @@
 ﻿using System.Linq.Expressions;
+using Redis.OM.Searching;
 
 namespace XDataAccess;
 
-public interface IRepository<TEntity> : IReadOnlyRepository<TEntity>, IBasicRepository<TEntity>, IHistoryRepository<TEntity>
+public interface IRepository<TEntity> : IReadOnlyRepository<TEntity>, IBasicRepository<TEntity>,
+    IHistoryRepository<TEntity>
     where TEntity : Entity<TEntity>
 {
     public Task<TEntity?> FindAsync(
@@ -14,6 +16,8 @@ public interface IRepository<TEntity> : IReadOnlyRepository<TEntity>, IBasicRepo
         string id,
         CancellationToken cancellationToken = default
     );
+
+    public IRedisCollection<TEntity> GetCollection { get; }
 }
 
 public interface IRepository
@@ -23,5 +27,6 @@ public interface IRepository
 public interface IHistoryRepository<TEntity> where TEntity : Entity<TEntity>
 {
     public Task<IList<EntityHistory>> GetHistoryAsync(string id, CancellationToken cancellationToken = default);
-    
+
+    public IList<Dictionary<string, string>> GetIndexInfo();
 }

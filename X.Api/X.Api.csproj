@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\XDataAccess\XDataAccess.csproj" />
+      <ProjectReference Include="..\XProbabilisticToolkit\XProbabilisticToolkit.csproj" />
     </ItemGroup>
 
     <ItemGroup>

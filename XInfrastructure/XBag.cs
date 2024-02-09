@@ -6,7 +6,7 @@ namespace XInfrastructure;
 
 using System.Collections.Generic;
 
-public class XBag
+public class XBag : IReadOnlyXBag
 {
     private readonly ConcurrentDictionary<string, XValue> _data = new();
 
