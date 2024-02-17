@@ -79,8 +79,7 @@ public class BloomFilter : IBloomFilter
 
     public IDictionary<string, int> Insert(BloomFilterArguments bloomFilterArguments)
     {
-        List<object> arguments = new List<object>();
-        arguments.Add(bloomFilterArguments.Key);
+        List<object> arguments = new List<object> { bloomFilterArguments.Key };
         if (bloomFilterArguments.Capacity.HasValue)
         {
             arguments.Add("CAPACITY");

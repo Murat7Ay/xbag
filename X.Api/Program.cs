@@ -74,14 +74,14 @@ builder.Services.AddTransient<IAuthUser>(_ => new AuthUser());
 builder.Services.AddHostedService<CreateIndexHostedService>();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddHttpContextAccessor();
-RegisterInfrastructures.AddRepositories(builder);
-RegisterInfrastructures.AddProbabilistic(builder);
+RegisterUtilities.AddRepositories(builder);
+RegisterUtilities.AddProbabilistic(builder);
 var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
-RegisterInfrastructures.AddApis(app);
+RegisterUtilities.AddApis(app);
 
 app.MapPut("/user", SaveUser());
 app.MapPost("/login", LoginUser());
