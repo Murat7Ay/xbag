@@ -1,6 +1,9 @@
 ﻿using Redis.OM.Modeling;
 using XDataAccess;
 
+namespace X.Api.CuisineRecipes;
+
+
 [Document(StorageType = StorageType.Json, IndexName = "idx:recipe", Prefixes = new[] { "recipe" })]
 public class Recipe : Entity<Recipe>
 {
@@ -213,6 +216,18 @@ public class DietaryRestrictions
     public bool LowSodium { get; set; } // boolean
     [Indexed]
     public bool LowCalorie { get; set; } // boolean
+    [Indexed]
+    public bool KetoFriendly { get; set; }
+    [Indexed]
+    public bool DiabeticFriendly { get; set; }
+    [Indexed]
+    public bool PaleoFriendly { get; set; }
+    [Indexed]
+    public bool HeartHealthy { get; set; }
+    [Indexed]
+    public bool Kosher { get; set; }
+    [Indexed]
+    public bool Halal { get; set; }
     [Searchable]
     public List<string> OtherRestrictions { get; set; } // List<string>
 }
