@@ -33,17 +33,17 @@ public class BloomFilter : IBloomFilter
         return values;
     }
 
-    public int Cardinality(string key)
+    public int EstimateCardinality(string key)
     {
         return (int)_database.Execute("BF.CARD", new List<object>() { key });
     }
 
-    public int Exists(string key, string item)
+    public int CheckExistence(string key, string item)
     {
         return (int)_database.Execute("BF.EXISTS", new List<object>() { key, item });
     }
 
-    public IDictionary<string, int> Exists(string key, ISet<string> items)
+    public IDictionary<string, int> CheckExistence(string key, ISet<string> items)
     {
         Dictionary<string, int> values = new Dictionary<string, int>();
         List<object> arguments = new List<object>() { key };
@@ -77,7 +77,7 @@ public class BloomFilter : IBloomFilter
         return result;
     }
 
-    public IDictionary<string, int> Insert(BloomFilterArguments bloomFilterArguments)
+    public IDictionary<string, int> CreateFilter(BloomFilterArguments bloomFilterArguments)
     {
         List<object> arguments = new List<object> { bloomFilterArguments.Key };
         if (bloomFilterArguments.Capacity.HasValue)
@@ -106,11 +106,12 @@ public class BloomFilter : IBloomFilter
             arguments.Add("NONSCALING");
         }
         
-        if (bloomFilterArguments.Items != null)
-        {
-            arguments.Add("ITEMS");
-            arguments.AddRange(bloomFilterArguments.Items);
-        }
+        //TODO: don't add items. only create filter
+        // if (bloomFilterArguments.Items != null)
+        // {
+        //     arguments.Add("ITEMS");
+        //     arguments.AddRange(bloomFilterArguments.Items);
+        // }
 
         var result = _database.Execute("BF.INSERT", arguments);
         //TODO: extract items result from command 
