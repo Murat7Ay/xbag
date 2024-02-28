@@ -10,7 +10,8 @@ public static class RegisterUtilities
 {
     public static void AddProbabilistic(WebApplicationBuilder builder)
     {
-        builder.Services.AddSingleton(typeof(IBloomFilter), typeof(BloomFilter));
+        builder.Services.AddSingleton(typeof(IProbabilisticFactory), typeof(ProbabilisticFactory));
+        // builder.Services.AddSingleton(typeof(IBloomFilter), typeof(BloomFilter));
     }
 
     public static void AddRepositories(WebApplicationBuilder builder)
@@ -25,10 +26,26 @@ public static class RegisterUtilities
         RegisterEntityRoutes<DataHolder>(app);
 
         
-        app.MapPost("/BloomFilter/Add", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.AddItem(arguments.Key, arguments.Item));
-        app.MapPost("/BloomFilter/EstimateCardinality", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.EstimateCardinality(arguments.Key));
-        app.MapPost("/BloomFilter/CheckExistence", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.CheckExistence(arguments.Key, arguments.Items));
-        app.MapPost("/BloomFilter/Info", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Info(arguments.Key));
+        app.MapPost("/BloomFilter/AddItem", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.AddItem(arguments.Item!);
+        });
+        app.MapPost("/BloomFilter/EstimateCardinality", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.EstimateCardinality();
+        });
+        app.MapPost("/BloomFilter/CheckExistence", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.CheckExistence(arguments.Items!);
+        });
+        app.MapPost("/BloomFilter/Info", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.Info();
+        });
     }
    private static void RegisterEntityRoutes<TEntity>(WebApplication app) where TEntity :  Entity<TEntity>
     {
