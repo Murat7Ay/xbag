@@ -26,8 +26,8 @@ public static class RegisterUtilities
 
         
         app.MapPost("/BloomFilter/Add", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.AddItem(arguments.Key, arguments.Item));
-        app.MapPost("/BloomFilter/Cardinality", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Cardinality(arguments.Key));
-        app.MapPost("/BloomFilter/Exists", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Exists(arguments.Key, arguments.Items));
+        app.MapPost("/BloomFilter/EstimateCardinality", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.EstimateCardinality(arguments.Key));
+        app.MapPost("/BloomFilter/CheckExistence", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.CheckExistence(arguments.Key, arguments.Items));
         app.MapPost("/BloomFilter/Info", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Info(arguments.Key));
     }
    private static void RegisterEntityRoutes<TEntity>(WebApplication app) where TEntity :  Entity<TEntity>
