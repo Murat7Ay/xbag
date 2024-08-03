@@ -10,7 +10,8 @@ public static class RegisterUtilities
 {
     public static void AddProbabilistic(WebApplicationBuilder builder)
     {
-        builder.Services.AddSingleton(typeof(IBloomFilter), typeof(BloomFilter));
+        builder.Services.AddSingleton(typeof(IProbabilisticFactory), typeof(ProbabilisticFactory));
+        // builder.Services.AddSingleton(typeof(IBloomFilter), typeof(BloomFilter));
     }
 
     public static void AddRepositories(WebApplicationBuilder builder)
@@ -21,39 +22,32 @@ public static class RegisterUtilities
     public static void AddApis(WebApplication app)
     {
         RegisterEntityRoutes<EntityExample>(app);
-        RegisterEntityRoutes<RecipeEntity>(app);
+        RegisterEntityRoutes<Recipe>(app);
+        RegisterEntityRoutes<DataHolder>(app);
 
-        app.MapPost("/BloomFilter/Add", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.AddItem(arguments.Key, arguments.Item));
-        app.MapPost("/BloomFilter/Cardinality", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Cardinality(arguments.Key));
-        app.MapPost("/BloomFilter/Exists", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Exists(arguments.Key, arguments.Items));
-        app.MapPost("/BloomFilter/Info", (IBloomFilter bloomFilter, [FromBody] BloomFilterArguments arguments) => bloomFilter.Info(arguments.Key));
-    }
-
-    private static void RegisterCuisineRecipeEntity(WebApplication app)
-    {
         
+        app.MapPost("/BloomFilter/AddItem", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.AddItem(arguments.Item!);
+        });
+        app.MapPost("/BloomFilter/EstimateCardinality", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.EstimateCardinality();
+        });
+        app.MapPost("/BloomFilter/CheckExistence", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.CheckExistence(arguments.Items!);
+        });
+        app.MapPost("/BloomFilter/Info", (IProbabilisticFactory factory, [FromBody] BloomFilterArguments arguments) =>
+        {
+            IBloomFilter bloomFilter = factory.CreateBloomFilter(arguments.Key!);
+            return bloomFilter.Info();
+        });
     }
-    
-    private static void RegisterExampleEntity(WebApplication app)
-    {
-        app.MapPut("/EntityExample",
-            (IRepository<EntityExample> repository, EntityExample entity) => repository.InsertAsync(entity));
-        app.MapPost("/EntityExample",
-            (IRepository<EntityExample> repository, EntityExample entity) => repository.UpdateAsync(entity));
-        app.MapDelete("/EntityExample",
-            (IRepository<EntityExample> repository, [FromBody] EntityExample entity) => repository.DeleteAsync(entity));
-        app.MapGet("/EntityExample", (IRepository<EntityExample> repository) => repository.GetListAsync());
-        app.MapGet("/EntityExample/IndexInfo", (IRepository<EntityExample> repository) => repository.GetIndexInfo());
-        app.MapGet("/EntityExample/{id}/history",
-            (IRepository<EntityExample> repository, string id) => repository.GetHistoryAsync(id));
-        app.MapGet("/EntityExample/{id}",
-            (IRepository<EntityExample> repository, string id) => repository.FindByIdAsync(id));
-        app.MapPost("/EntityExample/Paged",
-            (IRepository<EntityExample> repository, [FromBody] DataSourceRequest request) =>
-                repository.GetPagedListAsync(request));
-    }
-    
-    private static void RegisterEntityRoutes<TEntity>(WebApplication app) where TEntity :  Entity<TEntity>
+   private static void RegisterEntityRoutes<TEntity>(WebApplication app) where TEntity :  Entity<TEntity>
     {
         app.MapPut($"/{typeof(TEntity).Name}",
             (IRepository<TEntity> repository, TEntity entity) => repository.InsertAsync(entity));

@@ -217,7 +217,7 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
     public IList<Dictionary<string, string>> GetIndexInfo()
     {
         //TODO: check multiple prefixes and none prefix on attribute
-        string indexName = string.Join("",GetPrefixes()).ToLower(CultureInfo.InvariantCulture) + "-idx";
+        string indexName = GetIndexName();
         RedisResult infoResult = _database.Execute("FT.INFO", indexName);
 
         if (infoResult.Type == ResultType.MultiBulk)
@@ -265,16 +265,16 @@ public class RedisRepository<TEntity> : IRepository<TEntity> where TEntity : Ent
 
     public IRedisCollection<TEntity> GetCollection => _collection;
     
-    public string[] GetPrefixes()
+    public string GetIndexName()
     {
         Type entityType = typeof(TEntity);
         DocumentAttribute? documentAttribute = (DocumentAttribute)Attribute.GetCustomAttribute(entityType, typeof(DocumentAttribute));
 
         if (documentAttribute != null)
         {
-            return documentAttribute.Prefixes;
+            return documentAttribute.IndexName;
         }
 
-        return Array.Empty<string>();
+        return string.Empty;
     }
 }

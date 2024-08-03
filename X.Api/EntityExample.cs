@@ -1,7 +1,7 @@
 ﻿using Redis.OM.Modeling;
 using XDataAccess;
 
-[Document(StorageType = StorageType.Json, Prefixes = new[] { "EntityExample" })]
+[Document(StorageType = StorageType.Json,IndexName = "idx:entity", Prefixes = new[] { "EntityExample" })]
 public class EntityExample : Entity<EntityExample>
 {
     [Searchable]

@@ -1,7 +1,7 @@
 ﻿using Redis.OM.Modeling;
 using XDataAccess;
 
-[Document(StorageType = StorageType.Json, Prefixes = new[] { "User" })]
+[Document(StorageType = StorageType.Json,IndexName = "idx:user", Prefixes = new[] { "User" })]
 public class UserEntity : Entity<UserEntity> 
 {
     [Indexed(CaseSensitive = false)] 
